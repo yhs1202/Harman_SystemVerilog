@@ -2,8 +2,8 @@
 module counter_top(
     input clk, rst,
     input mode,     // Btn_R, 0: up, 1: down
-    input enable,   // Btn_L, 0: stop, 1: run
-    input clear,    // Btn_U
+    input enable,   // Btn_U, 0: stop, 1: run
+    input clear,    // Btn_L
     output [3:0] fnd_com,
     output [7:0] fnd_data
     );
