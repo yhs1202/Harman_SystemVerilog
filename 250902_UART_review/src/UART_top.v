@@ -1,10 +1,15 @@
 `timescale 1ns / 1ps
 module UART_top(
-    input clk, rst,
+    input clk,
+    input rst,
     input tx_start,
     input [7:0] tx_data,
+    input rx,
     output tx_busy,
-    output tx
+    output tx,
+    output [7:0] rx_data,
+    // output rx_busy,
+    output rx_done
 );
     wire w_b_tick;
 
@@ -23,5 +28,17 @@ module UART_top(
         
         .tx_busy(tx_busy),
         .tx(tx)
+    );
+
+
+    UART_Rx U_UART_RX(
+        .clk(clk),
+        .reset(rst),
+        .b_tick(w_b_tick),
+        .rx(rx),
+
+        .rx_data(rx_data),
+        .rx_busy(),
+        .rx_done(rx_done)
     );
 endmodule

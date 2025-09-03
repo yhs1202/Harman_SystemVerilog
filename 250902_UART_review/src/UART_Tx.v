@@ -59,7 +59,9 @@ module UART_Tx(
                 tx_next = 1;
                 tx_busy_next = 0;
                 if (tx_start) begin
+                    b_tick_cnt_next = 0;
                     tx_data_next = tx_data;
+                    bit_cnt_next = 0;
                     n_state = START;
                 end
             end
