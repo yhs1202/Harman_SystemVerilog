@@ -19,7 +19,7 @@ module tb_UART_Tx();
     reg [7:0] pass_count;
     reg [7:0] fail_count;
     integer bit_count = 0;
-    integer i;
+    integer i = 0;
 
     // Instantiate the UART_Tx module
     UART_top dut (
@@ -40,12 +40,12 @@ module tb_UART_Tx();
     
     initial begin
         #0; clk = 0; rst = 1; tx_start = 0; pass_count = 0; fail_count = 0;
-         tx_data = 8'h41;
+        tx_data = 8'h41;
         #10; rst = 0;
         #10; tx_start = 1;
         #10; tx_start = 0;
 
-        #(BAUD_DELAY);
+        // #(BAUD_DELAY);
         #10000;
         $stop;
 
@@ -116,7 +116,6 @@ module tb_UART_Tx();
             end else begin
                 pass_count = pass_count + 1;
             end
-
         end
     endtask
 
