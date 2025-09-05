@@ -1,29 +1,29 @@
 `timescale 1ns / 1ps
-module counter_controller_unit(
+module command_controller_unit(
     input clk, rst,
-    input btn_enable, btn_clear, btn_mode,
     input [7:0] rx_data,
     input rx_done,
-    output enable, clear, mode
+    output enable_cmd,
+    output clear_cmd,
+    output mode_cmd
     );
 
     parameter IDLE = 0, CMD = 1;
-
     reg c_state, n_state;
     reg enable_reg, enable_next;
     reg clear_reg, clear_next;
     reg mode_reg, mode_next;
 
-    assign enable = enable_reg;
-    assign clear = clear_reg;
-    assign mode = mode_reg;
+    assign enable_cmd = enable_reg;
+    assign clear_cmd = clear_reg;
+    assign mode_cmd = mode_reg;
 
     always @(posedge clk, posedge rst) begin
         if (rst) begin
-            c_state <= IDLE;
+            c_state <= 0;
             enable_reg <= 0;
             clear_reg <= 0;
-            mode_reg <= 0;    // 0: up
+            mode_reg <= 0;
         end
         else begin
             c_state <= n_state;
@@ -43,17 +43,6 @@ module counter_controller_unit(
             IDLE: begin
                 if (rx_done) begin
                     n_state = CMD;
-                end
-                if (btn_enable | btn_clear | btn_mode) begin
-                    if (btn_enable) begin
-                        enable_next = ~enable_reg;
-                    end
-                    if (btn_clear) begin
-                        clear_next = 1;
-                    end
-                    if (btn_mode) begin
-                        mode_next = ~mode_reg;
-                    end
                 end
             end
             CMD: begin

@@ -14,10 +14,24 @@ module counter_top(
 
     wire w_btn_enable, w_btn_clear, w_btn_mode;
     wire w_enable, w_clear, w_mode;
+    // wire w_uart_enable, w_uart_clear, w_uart_mode;
     wire [$clog2(10000)-1:0] w_count;
 
+    wire [7:0] w_rx_data;
+    wire w_rx_done;
 
-    uart_top U_UART_TOP (
+    // command_controller_unit U_COMMAND_CONTROLLER_UNIT (
+    //     .clk (clk),
+    //     .rst (rst),
+    //     .rx_data (w_rx_data),
+    //     .rx_done (w_rx_done),
+
+    //     .enable_cmd (w_uart_enable),
+    //     .clear_cmd (w_uart_clear),
+    //     .mode_cmd (w_uart_mode)
+    // );
+
+    UART_top U_UART_TOP (
         .clk(clk),
         .rst(rst),
         .tx_start(w_rx_done),
@@ -25,10 +39,10 @@ module counter_top(
         .rx(rx),
 
         .tx_busy(),
-        .tx(),
-        .rx_data(),
+        .tx(tx),
+        .rx_data(w_rx_data),
         .rx_busy(),
-        .rx_done()
+        .rx_done(w_rx_done)
     );
 
 
@@ -59,6 +73,8 @@ module counter_top(
         .btn_enable (w_btn_enable),
         .btn_clear (w_btn_clear),
         .btn_mode (w_btn_mode),
+        .rx_data (w_rx_data),
+        .rx_done (w_rx_done),
 
         .enable (w_enable),
         .clear (w_clear),

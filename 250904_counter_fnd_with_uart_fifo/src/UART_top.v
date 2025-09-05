@@ -8,7 +8,7 @@ module UART_top (
     output tx_busy,
     output tx,
     output [7:0] rx_data,
-    // output rx_busy,
+    output rx_busy,
     output rx_done
 );
     wire w_b_tick;
