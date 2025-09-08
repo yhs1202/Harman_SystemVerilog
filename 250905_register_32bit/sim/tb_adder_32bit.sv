@@ -17,18 +17,18 @@ class transaction;
     
 endclass //transaction
 
+// generate stimulus with transaction class object and drive signals through interface
 class generator;
     // virtual -> to use interface in class without port connection
     virtual adder_32bit_interface adder_if;
 
     // handle for transaction class
     // to create object of transaction class
-    // like pointer in C/C++, import in python
+    // like pointer in C/C++
     // tr.randomize() -> method of class
     transaction tr;
 
     // new() -> constructor
-    // new -> keyword to create object
     function new(virtual adder_32bit_interface intf);
         this.adder_if = intf;
         tr = new();   // instantiate transaction class
@@ -58,7 +58,7 @@ class generator;
 endclass //generator
 
 module tb_adder_32bit();
-    // instance of interface
+    // instance of interface (to connect DUT and class)
     adder_32bit_interface intf();
     
     // instance of generator class
