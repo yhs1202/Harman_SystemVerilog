@@ -141,6 +141,6 @@ module tb_adder_8bit();
 
     initial begin
         env = new(intf);
-        env.run(50); // generate 10 test vectors
+        env.run(50); // generate test vectors
     end
 endmodule

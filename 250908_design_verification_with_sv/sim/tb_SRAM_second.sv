@@ -1,21 +1,36 @@
 `timescale 1ns / 1ps
 
-interface register_8bit_if;
+interface sram_if;
     logic clk;
     logic rst;
     logic w_en;
+    logic [3:0] addr;
     logic [7:0] d;
     logic [7:0] q;
-endinterface // register_8bit_if
+endinterface // sram_if
 
 class transaction;
     rand bit w_en;
+    rand bit [3:0] addr;
     rand bit [7:0] d;
     // read only
     bit [7:0] q;
 
+    constraint addr_limit {
+        addr inside {[4:12]};
+    }
+
+    constraint w_data_limit {
+        d inside {[0:100]};
+    }
+
+    constraint write_chance {
+        // 70% chance to read
+        w_en dist {0 := 3, 1 := 7};
+        // w_en dist {0 :/ 3, 1 :/ 7}; // alternative syntax
+    }
     task display(string name);
-        $display("[%t] [%s]: w_en = %0b, d = %0h, q = %0h", $time, name, w_en, d, q);
+        $display("[%t] [%s]: w_en = %0b, addr = %h, d = %0h, q = %0h", $time, name, w_en, addr, d, q);
     endtask // display
 
 endclass // transaction
@@ -56,13 +71,13 @@ endclass // generator
 class driver;
     transaction tr;
     mailbox #(transaction) mbx_gen2drv;
-    virtual register_8bit_if intf;
+    virtual sram_if intf;
 
     // event
     // event gen_next_event;   // to synchronize generator and driver
 
     // function new(mailbox #(transaction) mbx_gen2drv, virtual register_8bit_if intf, event gen_next_event);
-    function new(mailbox #(transaction) mbx_gen2drv, virtual register_8bit_if intf);
+    function new(mailbox #(transaction) mbx_gen2drv, virtual sram_if intf);
         this.mbx_gen2drv = mbx_gen2drv;
         this.intf = intf;
         // this.gen_next_event = gen_next_event;
@@ -70,17 +85,27 @@ class driver;
 
     task reset();
         // drive reset signal
-        intf.rst = 1;
-        intf.w_en = 0;
+        intf.addr = 0;
+        intf.w_en = 1;
         intf.d = 0;
+
+        // reset sequence
+        for (int i = 0; i < 16; i++) begin
+            @(posedge intf.clk);
+            intf.w_en = 1;
+            intf.addr = i;
+            intf.d = 8'h0;
+        end
+        @(posedge intf.clk);
+        intf.w_en = 0;
         #10;
-        intf.rst = 0;
     endtask // reset
 
     task run();
         // drive signals based on mailbox transactions
         forever begin
             mbx_gen2drv.get(tr); // blocking get if no transaction available
+            intf.addr = tr.addr;
             intf.w_en = tr.w_en;
             intf.d = tr.d;
             tr.display("DRV");
@@ -94,10 +119,10 @@ endclass // driver
 // receives signals from DUT and displays them
 class monitor;
     transaction tr;
-    virtual register_8bit_if intf;
+    virtual sram_if intf;
     mailbox #(transaction)mbx_mon2scb;
 
-    function new(mailbox #(transaction) mbx_mon2scb, virtual register_8bit_if intf);
+    function new(mailbox #(transaction) mbx_mon2scb, virtual sram_if intf);
         this.intf = intf;
         this.mbx_mon2scb = mbx_mon2scb;
     endfunction // new()
@@ -107,11 +132,12 @@ class monitor;
         forever begin
             // monitor signals from DUT
             tr = new();
-            #2;
+            @(posedge intf.clk);
+            
+            #1;
+            tr.addr = intf.addr;
             tr.w_en = intf.w_en;
             tr.d = intf.d;  // capture d and w_en
-            @(posedge intf.clk);
-            #1;
             tr.q = intf.q;  // capture q after clk edge
             tr.display("MON");
             // send transaction object to scoreboard class
@@ -132,6 +158,10 @@ class scoreboard;
     int passed_count = 0;
     int failed_count = 0;
 
+    // buffer to hold expected values
+    byte addr_mem [16]; // expected memory content
+
+
     function new(mailbox #(transaction) mbx_mon2scb, event gen_next_event);
         this.mbx_mon2scb = mbx_mon2scb;
         this.gen_next_event = gen_next_event;
@@ -146,16 +176,17 @@ class scoreboard;
             // for simplicity, we just display the monitored transaction here
             tr.display("SCB");
             if (tr.w_en) begin
+                addr_mem[tr.addr] = tr.d; // update expected memory content
+                $display("[INFO]: Write operation at addr = %0h, data = %0h", tr.addr, tr.d);
+            end else begin
                 // expected q should be equal to d if w_en is high
-                if (tr.q == tr.d) begin
-                    $display("[PASS]: q = %0h as expected", tr.q);
+                if (addr_mem[tr.addr] == tr.q) begin
+                    $display("[PASS]: q = %0h as expected, addr = %0h", tr.q, tr.addr);
                     passed_count++;
                 end else begin
-                    $error("[FAIL] Scoreboard Error: Expected q = %0h, Got q = %0h", tr.d, tr.q);
+                    $error("[FAIL] Scoreboard Error: Expected q = %0h, Got q = %0h, addr = %0h", addr_mem[tr.addr], tr.q, tr.addr);
                     failed_count++;
                 end
-            end
-            else begin
                 $display("Scoreboard Info: w_en=0, no write operation");
             end
             -> gen_next_event; // notify generator to produce next transaction
@@ -174,7 +205,7 @@ class environment;
     // event
     event gen_next_event;   // to synchronize generator and driver -> scoreboard
 
-    function new(virtual register_8bit_if intf);
+    function new(virtual sram_if intf);
         mbx_gen2drv = new();
         mbx_mon2scb = new();
         gen = new(mbx_gen2drv, gen_next_event);
@@ -209,14 +240,15 @@ class environment;
 endclass // environment
 
 
-module tb_register_8bit();
-    register_8bit_if intf();
+module tb_SRAM();
+    sram_if intf();
     environment env;
 
-    register_8bit dut (
+    SRAM dut (
         .clk(intf.clk),
         .rst(intf.rst),
         .w_en(intf.w_en),
+        .addr(intf.addr),
         .d(intf.d),
         .q(intf.q)
     );
@@ -230,4 +262,3 @@ module tb_register_8bit();
     end
 
 endmodule
-
