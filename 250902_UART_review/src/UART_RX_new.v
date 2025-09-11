@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module UART_Rx_new (
     input clk,
     input rst,
@@ -11,7 +12,6 @@ module UART_Rx_new (
                      START = 2'b01,
                      DATA = 2'b10,
                      STOP = 2'b11;
-
 
     reg [1:0] c_state, n_state;
     reg [3:0] b_tick_cnt_reg, b_tick_cnt_next;
