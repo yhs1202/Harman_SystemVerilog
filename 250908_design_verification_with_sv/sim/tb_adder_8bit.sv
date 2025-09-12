@@ -69,6 +69,7 @@ endclass // generator
 
 // 5-2. driver class
 class driver;
+    transaction tr;
     virtual add_sub_if add_sub_if; // handle for interface
     mailbox #(transaction) gen2drv_mbx; // handle for mailbox
 
@@ -86,7 +87,6 @@ class driver;
 
     task drive();
         // get transaction object from mailbox
-        transaction tr;
         gen2drv_mbx.get(tr);
         add_sub_if.a = tr.a;
         add_sub_if.b = tr.b;
