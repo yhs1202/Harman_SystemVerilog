@@ -1,33 +1,35 @@
 `timescale 1ns / 1ps
-interface uart_top_rx_interface;
+// 1. Interface
+interface uart_rx_if;
     logic clk;
     logic rst;
     logic rx;
     logic [7:0] rx_data;
-    logic rx_done;
 endinterface //uart_top_tx_interface
 
+
+// 2. Transaction Class
 class transaction;
     rand bit [7:0] rx_data;
-    bit rx_done;
 
     constraint data_c {
         rx_data inside { [1:254] };
     }
 
     task display(string name);
-        $display("%t:[%s] : rx_data : %0h, rx_done : %0b",
-        $time, name, rx_data, rx_done);
+        $display("%t:[%s] : rx_data : %0h", $time, name, rx_data);
     endtask
 endclass
 
+
+// 3. Generator Class
 class generator;
     transaction tr;
     mailbox #(transaction) gen2drv_mbox;
     mailbox #(transaction) gen2scb_mbox;
     event gen_next_event;
 
-    int total_count = 0;
+    int gen_count = 0;
 
     function new(mailbox #(transaction) gen2drv_mbox, mailbox #(transaction) gen2scb_mbox, event gen_next_event);
         this.gen2drv_mbox = gen2drv_mbox;
@@ -37,37 +39,42 @@ class generator;
 
     task run(int count);
         repeat(count) begin
-            total_count++;
+            gen_count++;
             tr = new;
-            assert(tr.randomize())
-            else $display("Random Error!!!!");
+            assert(tr.randomize()) else begin
+                $fatal("Failed to randomize");
+            end
             gen2drv_mbox.put(tr);
             gen2scb_mbox.put(tr);
-            tr.display("[Gen]");
+            tr.display("GEN");
             @(gen_next_event);
         end
     endtask
 
 endclass
 
+
+// 4. Driver Class
 class driver;
     transaction tr;
     mailbox #(transaction) gen2drv_mbox;
-    virtual uart_top_rx_interface uart_top_rx_interface_if;
+    virtual uart_rx_if intf;
     event mon_next_event;
 
-    function new(mailbox #(transaction) gen2drv_mbox, virtual uart_top_rx_interface uart_top_rx_interface_if, event mon_next_event);
+    int drv_count = 0;
+
+    function new(mailbox #(transaction) gen2drv_mbox, virtual uart_rx_if intf, event mon_next_event);
         this.gen2drv_mbox = gen2drv_mbox;
-        this.uart_top_rx_interface_if = uart_top_rx_interface_if;
+        this.intf = intf;
         this.mon_next_event = mon_next_event;
     endfunction
 
     task reset();
-        uart_top_rx_interface_if.rst = 1;
-        uart_top_rx_interface_if.rx = 1'b1;
-        repeat(5) @(posedge uart_top_rx_interface_if.clk);
-        uart_top_rx_interface_if.rst = 0;
-        repeat(5) @(posedge uart_top_rx_interface_if.clk);
+        intf.rst = 1;
+        intf.rx = 1'b1;
+        repeat(5) @(posedge intf.clk);
+        intf.rst = 0;
+        repeat(5) @(posedge intf.clk);
         $display("Reset done!");
     endtask
 
@@ -77,54 +84,62 @@ class driver;
     task run();
         forever begin
             gen2drv_mbox.get(tr);
+            drv_count++;
             $display("%t:[Drv] Transmitting data: %0h", $time, tr.rx_data);
             
-            @(posedge uart_top_rx_interface_if.clk);
+            @(posedge intf.clk);
             
-            uart_top_rx_interface_if.rx = 1'b0;
-            repeat(BAUD_RATE_DIVISOR) @(posedge uart_top_rx_interface_if.clk);
+            intf.rx = 1'b0;
+            repeat(BAUD_RATE_DIVISOR) @(posedge intf.clk);
 
             for (int i = 0; i < 8; i++) begin
-                uart_top_rx_interface_if.rx = tr.rx_data[i];
-                repeat(BAUD_RATE_DIVISOR) @(posedge uart_top_rx_interface_if.clk);
+                intf.rx = tr.rx_data[i];
+                repeat(BAUD_RATE_DIVISOR) @(posedge intf.clk);
             end
 
-            uart_top_rx_interface_if.rx = 1'b1;
-            repeat(BAUD_RATE_DIVISOR) @(posedge uart_top_rx_interface_if.clk);
+            intf.rx = 1'b1;
+            repeat(BAUD_RATE_DIVISOR) @(posedge intf.clk);
             
             -> mon_next_event;
         end
     endtask
 endclass
 
+
+// 5. Monitor Class
 class monitor;
     transaction tr;
     mailbox #(transaction) mon2scb_mbox;
-    virtual uart_top_rx_interface uart_top_rx_interface_if;
+    virtual uart_rx_if intf;
     event mon_next_event;
+
+    int mon_count = 0;
     
-    function new(mailbox #(transaction) mon2scb_mbox, virtual uart_top_rx_interface uart_top_rx_interface_if
-    ,event mon_next_event);
+    function new(mailbox #(transaction) mon2scb_mbox, 
+                virtual uart_rx_if intf,
+                event mon_next_event);
         this.mon2scb_mbox = mon2scb_mbox;
-        this.uart_top_rx_interface_if = uart_top_rx_interface_if;
+        this.intf = intf;
         this.mon_next_event = mon_next_event;
     endfunction
 
     task run();
         forever begin
             @(mon_next_event);
-            tr = new;
-            tr.rx_done = uart_top_rx_interface_if.rx_done;
-            tr.rx_data = uart_top_rx_interface_if.rx_data;
+            tr = new();
+            tr.rx_data = intf.rx_data;
             
-            tr.display("[Mon]"); 
+            mon_count++;
+            tr.display("Mon"); 
             mon2scb_mbox.put(tr);
         end
     endtask
 endclass
 
+
+// 6. Scoreboard Class
 class scoreboard;
-    transaction expected_tr, actual_tr;
+    transaction tr_expect, tr_actual;
     mailbox #(transaction) mon2scb_mbox;
     mailbox #(transaction) gen2scb_mbox;
     event gen_next_event;
@@ -139,17 +154,17 @@ class scoreboard;
 
     task run();
         forever begin
-            gen2scb_mbox.get(expected_tr);
-            mon2scb_mbox.get(actual_tr);
+            gen2scb_mbox.get(tr_expect);
+            mon2scb_mbox.get(tr_actual);
             
-            expected_tr.display("[Scb-Exp]");
-            actual_tr.display("[Scb-Act]");
+            tr_expect.display("Scb-Exp");
+            tr_actual.display("Scb-Act");
             
-            if (actual_tr.rx_data == expected_tr.rx_data) begin
-                $display("[SCB] PASS: Expect = %0x, Actual = %0x", expected_tr.rx_data, actual_tr.rx_data);
+            if (tr_actual.rx_data == tr_expect.rx_data) begin
+                $display("[SCB] PASS: Expect = %0x, Actual = %0x", tr_expect.rx_data, tr_actual.rx_data);
                 pass_count++;
             end else begin
-                $display("[SCB] FAIL: Expect = %0x, Actual = %0x", expected_tr.rx_data, actual_tr.rx_data);
+                $display("[SCB] FAIL: Expect = %0x, Actual = %0x", tr_expect.rx_data, tr_actual.rx_data);
                 fail_count++;
             end
             -> gen_next_event;
@@ -158,36 +173,48 @@ class scoreboard;
 
 endclass
 
+
+// 7. Environment Class
 class environment;
     transaction tr;
     mailbox #(transaction) gen2drv_mbox;
     mailbox #(transaction) mon2scb_mbox;
     mailbox #(transaction) gen2scb_mbox;
+    virtual uart_rx_if intf;
+
+    event gen_next_event;
+    event mon_next_event;
+    
     generator gen;
     driver drv;
     monitor mon;
     scoreboard scb;
-    event gen_next_event;
-    event mon_next_event;
 
-    function new(virtual uart_top_rx_interface uart_top_rx_interface_if);
-        gen2drv_mbox = new;
-        mon2scb_mbox = new;
-        gen2scb_mbox = new;
+    function new(virtual uart_rx_if intf);
+        this.intf = intf;
+        gen2drv_mbox = new();
+        mon2scb_mbox = new();
+        gen2scb_mbox = new();
         gen = new(gen2drv_mbox, gen2scb_mbox, gen_next_event);
-        drv = new(gen2drv_mbox, uart_top_rx_interface_if, mon_next_event);
-        mon = new(mon2scb_mbox, uart_top_rx_interface_if, mon_next_event);
+        drv = new(gen2drv_mbox, intf, mon_next_event);
+        mon = new(mon2scb_mbox, intf, mon_next_event);
         scb = new(mon2scb_mbox, gen2scb_mbox, gen_next_event);
     endfunction
 
     task report();
-        $display("===================================");
-        $display("=========== TEST REPORT ===========");
-        $display("== Total Transactions: %0d ==", gen.total_count);
-        $display("== PASS Count: %0d ==", scb.pass_count);
-        $display("== FAIL Count: %0d ==", scb.fail_count);
-        $display("===================================");
-    endtask
+        // report the status of all components
+        $display("################### Environment Report ###################");
+        $display("Generator: Total transactions = %0d", gen.gen_count);
+        $display("Driver: Total transactions = %0d", drv.drv_count);
+        $display("Monitor: Total transactions = %0d", mon.mon_count);
+        $display("Scoreboard: Passed = %0d, Failed = %0d", scb.pass_count, scb.fail_count);
+        if (scb.fail_count == 0) begin
+            $display("Overall Result: PASSED");
+        end else begin
+            $display("Overall Result: FAILED");
+        end
+        $display("#########################################################");
+    endtask // report
 
     task run(int count);
         drv.reset();
@@ -202,41 +229,32 @@ class environment;
     endtask
 endclass
 
+
+// 8. Main Testbench Module
 module tb_uart_top_rx();
-    uart_top_rx_interface uart_top_rx_interface_tb();
+    uart_rx_if intf();
     environment env;
-
-    logic clk = 0;
-
-    // uart_top_rx dut(
-    //     .clk(uart_top_rx_interface_tb.clk),
-    //     .rst(uart_top_rx_interface_tb.rst),
-    //     .rx(uart_top_rx_interface_tb.rx),
-    //     .rx_data(uart_top_rx_interface_tb.rx_data),
-    //     .rx_done(uart_top_rx_interface_tb.rx_done)
-    // );
 
     UART_top dut (
         // tx -> will not connect at this time
-        .clk(uart_top_rx_interface_tb.clk),
-        .rst(uart_top_rx_interface_tb.rst),
+        .clk(intf.clk),
+        .rst(intf.rst),
         // .tx_start(),
         // .tx_data(),
-        .rx(uart_top_rx_interface_tb.rx),
+        .rx(intf.rx),
 
         // .tx_busy(),
         // .tx(),
-        .rx_data(uart_top_rx_interface_tb.rx_data),
-        .rx_done(uart_top_rx_interface_tb.rx_done)
+        .rx_data(intf.rx_data)
+        // .rx_done()
         // .baud_tick()
     );
 
-    always #5 uart_top_rx_interface_tb.clk = ~uart_top_rx_interface_tb.clk;
+    always #5 intf.clk = ~intf.clk;
 
     initial begin
-        uart_top_rx_interface_tb.clk = 0;
-        env = new(uart_top_rx_interface_tb);
-        //env.reset();
+        intf.clk = 0;
+        env = new(intf);
         env.run(50);
     end
 

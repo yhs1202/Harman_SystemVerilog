@@ -108,17 +108,18 @@ class driver;
             intf.rx = 0;
             @(posedge intf.clk);
 
-            repeat(10416) @(posedge intf.clk);
+            repeat(16) @(posedge intf.baud_tick);
             // data bits, LSB first
             for (int i=0; i<8; i++) begin
+                repeat(8) @(posedge intf.baud_tick);
                 intf.rx = tr.rx_data[i];
+                repeat(8) @(posedge intf.baud_tick);
                 // @(posedge intf.clk);
-                repeat(10416) @(posedge intf.clk);
             end
             // stop bit
+            repeat(8) @(posedge intf.baud_tick);
             intf.rx = 1;
             // @(posedge intf.clk);
-            repeat(10416) @(posedge intf.clk);
         end
     endtask
 endclass
@@ -163,7 +164,6 @@ class monitor;
             tr.stop_bit = intf.tx; // should be 1
             tr.rx_data = tr.uart_frame; // for display purpose
             // @(negedge intf.tx_busy);
-
 
             // send to scoreboard and display
             mbx_mon2scb.put(tr);
@@ -293,7 +293,7 @@ module tb_UART_FIFO_loopback();
     initial begin
         intf.clk = 0;
         env = new(intf);
-        env.run(20);
+        env.run(10);
         
     end
 

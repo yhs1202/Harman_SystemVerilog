@@ -31,7 +31,7 @@ endclass
 
 // 3. Generator Class
 class generator;
-    transaction tr_to_drv, tr_to_scb;
+    transaction tr;
     mailbox #(transaction) mbx_gen2drv;
     mailbox #(transaction) mbx_gen2scb;
     event gen_next_event;   // to synchronize generator and driver
@@ -48,26 +48,22 @@ class generator;
 
     task run(int count);
         repeat (count) begin
-            tr_to_drv = new();
-            tr_to_scb = new();
-            assert (tr_to_drv.randomize()) else begin
+            tr = new();
+            assert (tr.randomize()) else begin
                 $fatal("Failed to randomize");
             end
+            tr.start_bit = 0;
+            tr.uart_frame = tr.tx_data;
+            tr.tx_data = tr.tx_data; // for display purpose
+            tr.stop_bit = 1;
             // send to driver
-            tr_to_drv.start_bit = 0;
-            tr_to_drv.uart_frame = tr_to_drv.tx_data;
-            tr_to_drv.stop_bit = 1;
-            mbx_gen2drv.put(tr_to_drv);
+            mbx_gen2drv.put(tr);
 
             // also send to scoreboard with uart frame format
-            tr_to_scb.start_bit = 0;
-            tr_to_scb.uart_frame = tr_to_drv.tx_data;
-            tr_to_scb.tx_data = tr_to_drv.tx_data; // for display purpose
-            tr_to_scb.stop_bit = 1;
-            mbx_gen2scb.put(tr_to_scb);
+            mbx_gen2scb.put(tr);
 
-            tr_to_drv.display("GEN->DRV");
-            tr_to_scb.display("GEN->SCB");
+            tr.display("GEN->DRV");
+            tr.display("GEN->SCB");
             gen_count++;
             @(gen_next_event); // wait for driver -> scoreboard to consume transaction
         end
@@ -166,7 +162,7 @@ class monitor;
             // stop bit
             repeat(8) @(posedge intf.baud_tick);
             tr.stop_bit = intf.tx; // should be 1
-            tr.rx_data = tr.uart_frame; // for display purpose
+            tr.tx_data = tr.uart_frame; // for display purpose
             @(negedge intf.tx_busy);
 
             // display transaction information
