@@ -90,3 +90,22 @@ launch_simulation
 add_wave [get_objects -r /$tb_top/dut/*]
 run all
 puts ">>> Simulation completed."
+
+# Run synthesis
+launch_runs synth_1 -jobs 8
+wait_on_run synth_1
+
+# Run implementation and generate bitstream
+launch_runs impl_1 -to_step write_bitstream -jobs 8
+wait_on_run impl_1
+
+# Copy the generated bitstream to out/
+set bitfile [glob -nocomplain "$outdir/${proj_name}.runs/impl_1/*.bit"]
+if {[llength $bitfile]} {
+    set final_bit "$outdir/${proj_name}.bit"
+    file copy -force [lindex $bitfile 0] $final_bit
+    puts ">>> Bitstream generated: $final_bit"
+} else {
+    puts "!!! ERROR: Bitstream not found."
+}
+puts ">>> Build completed."

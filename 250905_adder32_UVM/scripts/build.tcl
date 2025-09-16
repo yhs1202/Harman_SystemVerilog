@@ -1,5 +1,5 @@
 # ============================================================
-# Vivado Simulation Script
+# Vivado Build Script
 # - Project name = current directory name
 # - Expects src/ and constr/ subdirectories
 # ============================================================
@@ -14,7 +14,7 @@ if {[info exists ::env(TOP)]} {
     set top $::env(TOP)
 } else {
     # Top-level module name (edit this)
-    set top "top"                    ;# Top-level module name (edit this)
+    set top "adder_32bit"                    ;# Top-level module name (edit this)
 }
 set tb_top "tb_$top"                 ;# Testbench top module name (edit this)
 set part "xc7a35ticsg324-1L"         ;# Device part (example: Basys-3)
@@ -83,10 +83,3 @@ if {[llength $tb_files_sv] > 0} {
 
 # Set simulation top module
 set_property top $tb_top [get_filesets sim_1]
-
-# Run simulation (uncomment to run)
-launch_simulation
-# add_wave [get_objects *]
-add_wave [get_objects -r /$tb_top/dut/*]
-run all
-puts ">>> Simulation completed."
