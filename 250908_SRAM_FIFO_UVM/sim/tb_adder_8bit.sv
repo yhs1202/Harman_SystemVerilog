@@ -123,7 +123,7 @@ class environment;
     endtask // run
 endclass // environment
 
-module tb_adder_8bit();
+module tb_adder_8bit_mode();
     // instance of interface (to connect DUT and class)
     add_sub_if intf();
 
@@ -131,7 +131,7 @@ module tb_adder_8bit();
     environment env;
 
     // instance of DUT
-    adder_8bit dut (
+    adder_8bit_mode dut (
         .a(intf.a),
         .b(intf.b),
         .mode(intf.mode),

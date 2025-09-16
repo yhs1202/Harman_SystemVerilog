@@ -4,7 +4,7 @@ interface sram_if;
     logic clk;
     logic rst;
     logic w_en;
-    logic [3:0] addr;
+    logic [3:0] addr;   // added address from register_8bit
     logic [7:0] d;
     logic [7:0] q;
 endinterface // sram_if
@@ -13,9 +13,10 @@ class transaction;
     rand bit w_en;
     rand bit [3:0] addr;
     rand bit [7:0] d;
-    // read only
+    // read only -> not randomized
     bit [7:0] q;
 
+    // constraints
     constraint addr_limit {
         addr inside {[4:12]};
     }
@@ -29,6 +30,8 @@ class transaction;
         w_en dist {0 := 3, 1 := 7};
         // w_en dist {0 :/ 3, 1 :/ 7}; // alternative syntax
     }
+
+    // display task
     task display(string name);
         $display("[%t] [%s]: w_en = %0b, addr = %h, d = %0h, q = %0h", $time, name, w_en, addr, d, q);
     endtask // display
@@ -41,7 +44,7 @@ class generator;
     mailbox #(transaction) mbx_gen2drv;
 
     // event
-    event gen_next_event;   // to synchronize generator and driver
+    event gen_next_event;   // to synchronize generator and scoreboard
 
     // counter for reporting
     int sent_count = 0;
@@ -55,15 +58,13 @@ class generator;
         repeat (count) begin
             sent_count++;
             tr = new();
-            // if (!tr.randomize()) begin
-            //     $fatal("Failed to randomize");
-            // end
+
             assert (tr.randomize()) else begin
                 $fatal("Failed to randomize");
             end
             mbx_gen2drv.put(tr);
             tr.display("GEN");
-            @(gen_next_event); // wait for driver -> scoreboard to consume transaction
+            @(gen_next_event); // wait for scoreboard to consume transaction
         end
     endtask // run
 endclass // generator
@@ -73,14 +74,9 @@ class driver;
     mailbox #(transaction) mbx_gen2drv;
     virtual sram_if intf;
 
-    // event
-    // event gen_next_event;   // to synchronize generator and driver
-
-    // function new(mailbox #(transaction) mbx_gen2drv, virtual register_8bit_if intf, event gen_next_event);
     function new(mailbox #(transaction) mbx_gen2drv, virtual sram_if intf);
         this.mbx_gen2drv = mbx_gen2drv;
         this.intf = intf;
-        // this.gen_next_event = gen_next_event;
     endfunction // new()
 
     task reset();
@@ -110,17 +106,17 @@ class driver;
             intf.d = tr.d;
             tr.display("DRV");
             @(posedge intf.clk); // wait for clock edge
-            // -> gen_next_event; // notify generator that transaction is consumed
         end
     endtask // run
 endclass // driver
+
 
 // monitor class
 // receives signals from DUT and displays them
 class monitor;
     transaction tr;
     virtual sram_if intf;
-    mailbox #(transaction)mbx_mon2scb;
+    mailbox #(transaction) mbx_mon2scb;
 
     function new(mailbox #(transaction) mbx_mon2scb, virtual sram_if intf);
         this.intf = intf;
@@ -140,11 +136,13 @@ class monitor;
             tr.d = intf.d;  // capture d and w_en
             tr.q = intf.q;  // capture q after clk edge
             tr.display("MON");
+
             // send transaction object to scoreboard class
             mbx_mon2scb.put(tr);
         end
     endtask // run
 endclass // monitor
+
 
 // scoreboard class
 // compares transactions from generator and monitor
@@ -152,6 +150,7 @@ class scoreboard;
     transaction tr;
     mailbox #(transaction) mbx_mon2scb;
     event gen_next_event;
+
     // no DUT interface needed
 
     // counters for reporting

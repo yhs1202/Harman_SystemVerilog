@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-module adder_8bit(
+module adder_8bit_mode(
     input logic [7:0] a,
     input logic [7:0] b,
     input logic mode,

@@ -9,7 +9,13 @@ set proj_dir [file normalize [pwd]]
 set proj_name [file tail $proj_dir]
 
 # User settings -----------------------------
-set top "top"                        ;# Top-level module name (edit this)
+# Set top module from environment variable if exists
+if {[info exists ::env(TOP)]} {
+    set top $::env(TOP)
+} else {
+    set top "fifo_top"                    ;# Top-level module name (edit this)
+}
+set tb_top "tb_$top"                 ;# Testbench top module name (edit this)
 set part "xc7a35ticsg324-1L"         ;# Device part (example: Basys-3)
 set srcdir   "$proj_dir/src"
 set constrdir "$proj_dir/constr"
@@ -20,6 +26,7 @@ file mkdir $outdir
 puts ">>> Building project: $proj_name"
 puts ">>> Part: $part"
 puts ">>> Top module: $top"
+puts ">>> Testbench module: $tb_top"
 
 # Create a non-project flow
 create_project $proj_name $outdir -part $part -force
@@ -39,17 +46,26 @@ add_files -fileset constrs_1 [glob -nocomplain "$constrdir/*.xdc"]
 launch_runs synth_1 -jobs 8
 wait_on_run synth_1
 
-# Run implementation and generate bitstream
-launch_runs impl_1 -to_step write_bitstream -jobs 8
-wait_on_run impl_1
+# Set simulation top module
+set_property top $tb_top [get_filesets sim_1]
 
-# Copy the generated bitstream to out/
-set bitfile [glob -nocomplain "$outdir/${proj_name}.runs/impl_1/*.bit"]
-if {[llength $bitfile]} {
-    set final_bit "$outdir/${proj_name}.bit"
-    file copy -force [lindex $bitfile 0] $final_bit
-    puts ">>> Bitstream generated: $final_bit"
-} else {
-    puts "!!! ERROR: Bitstream not found."
-}
-puts ">>> Build completed."
+# Run simulation (uncomment to run)
+launch_simulation
+add_wave [get_objects *]
+run all
+puts ">>> Simulation completed."
+
+# # Run implementation and generate bitstream
+# launch_runs impl_1 -to_step write_bitstream -jobs 8
+# wait_on_run impl_1
+
+# # Copy the generated bitstream to out/
+# set bitfile [glob -nocomplain "$outdir/${proj_name}.runs/impl_1/*.bit"]
+# if {[llength $bitfile]} {
+#     set final_bit "$outdir/${proj_name}.bit"
+#     file copy -force [lindex $bitfile 0] $final_bit
+#     puts ">>> Bitstream generated: $final_bit"
+# } else {
+#     puts "!!! ERROR: Bitstream not found."
+# }
+# puts ">>> Build completed."

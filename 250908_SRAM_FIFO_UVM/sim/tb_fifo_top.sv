@@ -53,7 +53,7 @@ class generator;
             end
             mbx_gen2drv.put(tr);
             tr.display("GEN");
-            @(gen_next_event); // wait for driver -> scoreboard to consume transaction
+            @(gen_next_event); // wait for scoreboard to consume transaction
         end
     endtask // run
 endclass
@@ -84,8 +84,7 @@ class driver;
         intf.rst = 0;
         repeat (2) @(posedge intf.clk);
         $display("[%t] [DRV]: De-asserting reset", $time);
-        // #1;
-        // @(negedge intf.clk);
+
     endtask // reset
 
     task run();
@@ -96,11 +95,7 @@ class driver;
             intf.w_en = tr.w_en;
             intf.r_en = tr.r_en;
             intf.w_data = tr.w_data;
-            // @(posedge intf.clk);
-            // capture output signals from DUT
-            // tr.r_data = intf.r_data;
-            // tr.full = intf.full;
-            // tr.empty = intf.empty;
+
             tr.display("DRV");
             #2;
             -> mon_next_event;

@@ -40,9 +40,7 @@ class generator;
         repeat (count) begin
             sent_count++;
             tr = new();
-            // if (!tr.randomize()) begin
-            //     $fatal("Failed to randomize");
-            // end
+
             assert (tr.randomize()) else begin
                 $fatal("Failed to randomize");
             end
@@ -58,14 +56,9 @@ class driver;
     mailbox #(transaction) mbx_gen2drv;
     virtual register_8bit_if intf;
 
-    // event
-    // event gen_next_event;   // to synchronize generator and driver
-
-    // function new(mailbox #(transaction) mbx_gen2drv, virtual register_8bit_if intf, event gen_next_event);
     function new(mailbox #(transaction) mbx_gen2drv, virtual register_8bit_if intf);
         this.mbx_gen2drv = mbx_gen2drv;
         this.intf = intf;
-        // this.gen_next_event = gen_next_event;
     endfunction // new()
 
     task reset();
@@ -85,7 +78,6 @@ class driver;
             intf.d = tr.d;
             tr.display("DRV");
             @(posedge intf.clk); // wait for clock edge
-            // -> gen_next_event; // notify generator that transaction is consumed
         end
     endtask // run
 endclass // driver
@@ -179,7 +171,6 @@ class environment;
         mbx_mon2scb = new();
         gen = new(mbx_gen2drv, gen_next_event);
         drv = new(mbx_gen2drv, intf);
-        // drv = new(mbx_gen2drv, intf, gen_next_event);
         mon = new(mbx_mon2scb, intf);
         scb = new(mbx_mon2scb, gen_next_event);
     endfunction //new()

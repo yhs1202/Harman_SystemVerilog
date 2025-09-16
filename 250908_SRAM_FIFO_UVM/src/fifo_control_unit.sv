@@ -45,36 +45,6 @@ module fifo_control_unit #(
         full_next = full_reg;
         empty_next = empty_reg;
 
-        /*
-        // Write pointer logic
-        if (w_en) begin
-            empty_next = 0;
-            if (!full_reg) begin
-                w_ptr_next = w_ptr_reg + 1;
-            end
-            if (w_ptr_next == r_ptr_reg) begin
-                full_next = 1;
-            end
-            else begin
-                full_next = 0;
-            end
-        end
-
-        // Read pointer logic
-        if (r_en) begin
-            full_next = 0;
-            if (!empty_reg) begin
-                r_ptr_next = r_ptr_reg + 1;
-                if (r_ptr_next == w_ptr_reg) begin
-                    empty_next = 1;
-                end
-                else begin
-                    empty_next = 0;
-                end
-            end
-        end
-        */
-
         case ({w_en, r_en})
             2'b01: begin
                 // Read operation
