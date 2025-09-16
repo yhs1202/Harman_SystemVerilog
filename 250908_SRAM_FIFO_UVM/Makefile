@@ -7,7 +7,7 @@ BIT := $(OUTDIR)/$(PROJ).bit
 SOURCES := $(shell find src -type f \( -name '*.v' -o -name '*.sv' \) 2>/dev/null)
 XDC := $(wildcard constr/*.xdc)
 
-.PHONY: all help bit sim clean veryclean check
+.PHONY: all help check build sim sim_gui bit clean veryclean
 
 all: bit
 
@@ -30,19 +30,25 @@ check:
 	@command -v $(VIVADO) >/dev/null 2>&1 || { \
 	  echo "ERROR: '$(VIVADO)' not found in PATH"; exit 127; }
 
-bit: $(BIT)
+build: scripts/build.tcl
+	$(VIVADO) -mode gui -source scripts/build.tcl
 
-$(BIT): $(SOURCES) $(XDC) build.tcl
+sim: $(SOURCES) scripts/sim.tcl
+	@echo "Run simulation (batch mode)" 
+	$(VIVADO) -mode batch -source scripts/sim.tcl
+
+sim_gui: $(SOURCES) scripts/sim.tcl
+	$(VIVADO) -mode gui -source scripts/sim.tcl
+
+bit: $(BIT) scripts/build.tcl
+$(BIT): $(SOURCES) $(XDC)
 	@mkdir -p $(OUTDIR)
+	@echo "Run Vivado build (batch mode)"
 	$(VIVADO) -mode batch -source build.tcl
 	@test -f "$(BIT)" || { echo "ERROR: expected bitstream '$(BIT)' not found"; exit 1; }
 
-sim: $(SOURCES) sim.tcl
-	@echo "Run simulation (not implemented)"
-	$(VIVADO) -mode batch -source sim.tcl
-
 clean:
-	@rm -rf $(OUTDIR) .Xil .cache .hw .runs .sim .gen
+	@rm -rf $(OUTDIR) .Xil .cache .runs .sim .gen *log *jou *str
 
 veryclean: clean
-	@rm -rf .vscode .idea Thumbs.db .DS_Store
+	@rm -rf .out .vscode .idea Thumbs.db .DS_Store
