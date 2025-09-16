@@ -1,4 +1,6 @@
 `timescale 1ns / 1ps
+
+// this module will be merged to counter_controller_unit
 module command_controller_unit(
     input clk, rst,
     input [7:0] rx_data,

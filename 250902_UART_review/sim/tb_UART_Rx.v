@@ -90,7 +90,7 @@ module tb_UART_Rx();
     endtask
 
 
-    // TX verification
+    // RX verification
     task transmit_uart();
         begin
             $display("transmit_uart start");
@@ -102,7 +102,7 @@ module tb_UART_Rx();
             // start bit pass/fail
             if (rx) begin
                 // fail
-                $display("TX verification failed: start bit is high");
+                $display("RX verification failed: start bit is high");
                 // fail_count = fail_count + 1;
             end
 
@@ -118,14 +118,14 @@ module tb_UART_Rx();
             // check stop bit
             // #(BIT_PERIOD);
             if (!rx) begin
-                $display("TX verification failed: stop bit is low");
+                $display("RX verification failed: stop bit is low");
                 // fail_count = fail_count + 1;
             end
 
             #(BIT_PERIOD / 2);
             // compare data
             if (transmitted_data !== expected_data) begin
-                $display("TX verification failed: expected %h, got %h", expected_data, transmitted_data);
+                $display("RX verification failed: expected %h, got %h", expected_data, transmitted_data);
                 fail_count = fail_count + 1;
             end else begin
                 pass_count = pass_count + 1;

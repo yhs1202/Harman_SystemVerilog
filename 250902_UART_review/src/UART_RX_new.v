@@ -1,4 +1,6 @@
 `timescale 1ns/1ps
+
+// UART_RX w/o rx_busy for new design
 module UART_Rx_new (
     input clk,
     input rst,
@@ -57,7 +59,7 @@ module UART_Rx_new (
             end
             START: begin
                 if (b_tick) begin
-                    if (b_tick_cnt_reg == 8) begin
+                    if (b_tick_cnt_reg == 7) begin
                         n_state = DATA;
                         b_tick_cnt_next = 0;
                         bit_cnt_next = 0;

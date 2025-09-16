@@ -31,14 +31,14 @@ module UART_top (
     );
 
 
-    UART_Rx U_UART_RX(
+    UART_Rx_new U_UART_RX(
         .clk(clk),
         .rst(rst),
         .b_tick(w_b_tick),
         .rx(rx),
 
         .rx_data(rx_data),
-        .rx_busy(rx_busy),
+        // .rx_busy(rx_busy),
         .rx_done(rx_done)
     );
 endmodule

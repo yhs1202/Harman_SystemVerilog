@@ -65,7 +65,7 @@ module tb_UART_Tx();
         $stop;
     end
 
-    // Test vector generation and send to UART
+    // 8-bit Test vector generation and send to UART
     task send(input [7:0] send_data);
         begin
             expected_data = send_data;
@@ -92,11 +92,11 @@ module tb_UART_Tx();
             // start bit pass/fail
             if (tx) begin
                 // fail
-                $display("RX verification failed: start bit is high");
+                $display("TX verification failed: start bit is high");
                 // fail_count = fail_count + 1;
             end
 
-            // received data bits
+            // receive and sampling each bit
             for (bit_count = 0; bit_count < 8; bit_count = bit_count + 1) begin
                 #(BIT_PERIOD);
                 received_data[bit_count] = tx;
@@ -105,13 +105,13 @@ module tb_UART_Tx();
             // check stop bit
             #(BIT_PERIOD);
             if (!tx) begin
-                $display("RX verification failed: stop bit is low");
+                $display("TX verification failed: stop bit is low");
                 // fail_count = fail_count + 1;
             end
 
             // compare data
             if (received_data !== expected_data) begin
-                $display("RX verification failed: expected %h, got %h", expected_data, received_data);
+                $display("TX verification failed: expected %h, got %h", expected_data, received_data);
                 fail_count = fail_count + 1;
             end else begin
                 pass_count = pass_count + 1;
