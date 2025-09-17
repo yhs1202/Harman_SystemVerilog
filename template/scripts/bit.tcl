@@ -1,5 +1,5 @@
 # ============================================================
-# Vivado Simulation Script
+# Vivado Bitstream Generation Script
 # - Project name = current directory name
 # - Expects src/ and constr/ subdirectories
 # ============================================================

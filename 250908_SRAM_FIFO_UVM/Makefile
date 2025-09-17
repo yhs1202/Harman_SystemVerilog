@@ -13,8 +13,10 @@ all: bit
 
 help:
 	@echo "Targets:"
-	@echo "  make bit         - run Vivado batch build (uses build.tcl)"
-	@echo "  make sim         - run Vivado simulation (not implemented)"
+	@echo "  make build	  	  - run Vivado GUI build (uses build.tcl)"
+	@echo "  make sim         - run Vivado simulation (batch mode, uses sim.tcl)"
+	@echo "  make sim_gui     - run Vivado simulation (GUI mode, uses sim.tcl)"
+	@echo "  make bit         - run Vivado batch build (uses bit.tcl)"
 	@echo "  make clean       - remove out/ and Vivado work dirs"
 	@echo "  make veryclean   - clean + IDE/OS leftovers"
 	@echo ""
@@ -40,11 +42,11 @@ sim: $(SOURCES) scripts/sim.tcl
 sim_gui: $(SOURCES) scripts/sim.tcl
 	$(VIVADO) -mode gui -source scripts/sim.tcl
 
-bit: $(BIT) scripts/build.tcl
+bit: $(BIT) scripts/bit.tcl
 $(BIT): $(SOURCES) $(XDC)
 	@mkdir -p $(OUTDIR)
 	@echo "Run Vivado build (batch mode)"
-	$(VIVADO) -mode batch -source build.tcl
+	$(VIVADO) -mode batch -source scripts/bit.tcl
 	@test -f "$(BIT)" || { echo "ERROR: expected bitstream '$(BIT)' not found"; exit 1; }
 
 clean:
