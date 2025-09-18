@@ -17,13 +17,13 @@
 *.xpr
 
 # Vivado work dirs
-/.Xil/
-/.cache/
-/.hw/
-/.runs/
-/.sim/
-/.gen/
-/out/
+**/.Xil/
+**/.cache/
+**/.hw/
+**/.runs/
+**/.sim/
+**/.gen/
+**/out/
 
 # IDE/OS
 .vscode/
