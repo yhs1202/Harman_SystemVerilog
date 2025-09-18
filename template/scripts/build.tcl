@@ -82,4 +82,4 @@ if {[llength $tb_files_sv] > 0} {
 }
 
 # Set simulation top module
-set_property top $tb_top [get_filesets sim_1]
+# set_property top $tb_top [get_filesets sim_1]
