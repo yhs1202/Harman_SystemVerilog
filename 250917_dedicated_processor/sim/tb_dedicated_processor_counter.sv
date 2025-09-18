@@ -6,7 +6,7 @@ module tb_dedicated_processor_counter;
     logic rst;
     logic [7:0] out = 0;
 
-    dedicated_processor_counter U_DPC (
+    dedicated_processor_counter dut (
         .clk(clk),
         .rst(rst),
         .out(out)
