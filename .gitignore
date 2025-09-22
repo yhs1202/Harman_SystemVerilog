@@ -15,6 +15,7 @@
 *.sdk
 *.xsa
 *.xpr
+*.dmp
 
 # Vivado work dirs
 **/.Xil/
