@@ -1,6 +1,6 @@
 # ============================================================
 # Vivado Simulation Script
-# - Project name = current directory name
+# - proj_name = current directory name
 # - Expects src/ and constr/ subdirectories
 # ============================================================
 
