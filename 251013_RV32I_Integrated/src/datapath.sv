@@ -18,6 +18,7 @@ module datapath (
 
     output logic [31:0] ALU_result, // to data memory addr (for store)
     output logic [31:0] MEM_w_data, // to data memory write data (for store)
+    output logic [3:0] byte_enable, // for memory (load/store)
     output logic branch_taken,
     output logic [31:0] PC
 );
@@ -29,7 +30,11 @@ module datapath (
     logic [31:0] PC_Plus4;
     logic [31:0] imm_ext;
 
-    assign MEM_w_data = RD2;
+    logic [31:0] BE_in_w_data; // to BE_logic (store)
+    logic [31:0] BE_in_r_data; // from BE_logic (load)
+
+    // assign MEM_w_data = RD2;
+    assign BE_in_w_data = RD2;
     // 0: rs1, 1: PC (for AUIPC)
     assign alu_a = (ALUSrc_A) ? PC : RD1;
     // 0: rs2, 1: imm_ext (for I-type, S-type, B-type, U-type)
@@ -37,7 +42,7 @@ module datapath (
 
     // 
     assign REG_w_data = (MemtoReg == 2'b00) ? ALU_result : // for R-type, I-type, AUIPC
-                            (MemtoReg == 2'b01) ? MEM_r_data : // for load
+                            (MemtoReg == 2'b01) ? BE_in_r_data : // for load
                             (MemtoReg == 2'b10) ? PC_Plus4 :   // for JAL
                             imm_ext; // for LUI
 
@@ -91,6 +96,17 @@ module datapath (
         .func3 (instr_code[14:12]),
 
         .branch_taken (branch_taken)
+    );
+
+    byte_enable_logic U_BYTE_ENABLE_LOGIC (
+        .func3 (instr_code[14:12]),
+        .addr (ALU_result),
+        .w_data (BE_in_w_data),  // to BE_logic (store)
+        .r_data (BE_in_r_data),  // to BE_logic (load)
+
+        .BE_w_data (MEM_w_data),  // to memory (store) with byte enable
+        .BE_r_data (MEM_r_data),  // to memory (load) with byte enable
+        .byte_enable (byte_enable)
     );
 endmodule
 
@@ -286,5 +302,82 @@ module branch_logic (
         end else begin
             branch_taken = 1'b0; // No branch
         end
+    end
+endmodule
+
+
+module byte_enable_logic (
+    input logic [2:0] func3,
+    input logic [31:0] addr,
+    input logic [31:0] w_data,  // to memory (store)
+    input logic [31:0] r_data,  // from memory (load)
+    output logic [31:0] BE_w_data,
+    output logic [31:0] BE_r_data,
+    output logic [3:0] byte_enable
+);
+    wire [1:0] Addr_Last2 = addr[1:0]; // address last 2 bits for byte enable
+
+    always_comb begin : Byte_enable_Decoding
+        case(func3)
+            // byte
+            `F3_BYTE, `F3_UBYTE: byte_enable = (Addr_Last2 == 2'b00) ? 4'b0001 :
+                                  (Addr_Last2 == 2'b01) ? 4'b0010 :
+                                  (Addr_Last2 == 2'b10) ? 4'b0100 :
+                                  (Addr_Last2 == 2'b11) ? 4'b1000 : 4'b0000;
+            // halfword
+            `F3_HALF, `F3_UHALF: byte_enable = (Addr_Last2 == 2'b00) ? 4'b0011 :
+                                  (Addr_Last2 == 2'b10) ? 4'b1100 :  4'b0000;
+            // word
+            `F3_WORD: byte_enable = 4'b1111;
+            default: byte_enable = 4'b0000;
+        endcase
+    end
+
+    always_comb begin : Byte_enable_Extension
+         case(byte_enable)
+            // word
+            4'b1111: begin  // for lw, sw
+                BE_r_data = r_data[31:0];
+                BE_w_data = w_data[31:0];
+            end
+
+            // halfword
+            4'b0011: begin  // for lh, sh
+                BE_r_data = (func3 == `F3_HALF) ? {{16{r_data[15]}}, r_data[15:0]} : // sign-extend
+                                                     {16'b0, r_data[15:0]}; // zero-extend
+                BE_w_data = {16'h0, w_data[15:0]};
+            end
+            4'b1100: begin  // for lh, sh
+                BE_r_data = (func3 == `F3_HALF) ? {{16{r_data[31]}}, r_data[31:16]} : // sign-extend
+                                                     {16'b0, r_data[31:16]}; // zero-extend
+                BE_w_data = {w_data[15:0], 16'h0};
+            end
+
+            // byte
+            4'b0001: begin
+                BE_r_data = (func3 == `F3_BYTE) ? {{24{r_data[7]}}, r_data[7:0]} : // sign-extend
+                                                     {24'b0, r_data[7:0]}; // zero-extend
+                BE_w_data = {24'h0, w_data[7:0]};
+            end
+            4'b0010: begin
+                BE_r_data = (func3 == `F3_BYTE) ? {{24{r_data[15]}}, r_data[15:8]} : // sign-extend
+                                                     {24'b0, r_data[15:8]}; // zero-extend
+                BE_w_data = {16'h0, w_data[7:0], 8'h0};
+            end
+            4'b0100: begin
+                BE_r_data = (func3 == `F3_BYTE) ? {{24{r_data[23]}}, r_data[23:16]} : // sign-extend
+                                                     {24'b0, r_data[23:16]}; // zero-extend
+                BE_w_data = {8'h0, w_data[7:0], 16'h0};
+            end
+            4'b1000: begin
+                BE_r_data = (func3 == `F3_BYTE) ? {{24{r_data[31]}}, r_data[31:24]} : // sign-extend
+                                                     {24'b0, r_data[31:24]}; // zero-extend
+                BE_w_data = {w_data[7:0], 24'h0};
+            end
+            default: begin
+                BE_r_data = 32'b0;
+                BE_w_data = 32'b0;
+            end
+        endcase
     end
 endmodule
