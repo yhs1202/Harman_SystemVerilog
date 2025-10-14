@@ -6,6 +6,10 @@ module MCU (
 );
 
     logic [31:0] instrCode, instrMemAddr;
+    logic [2:0] strb;
+    logic busWe;
+    logic [31:0] busAddr, busWData;
+    logic [31:0] busRData;
 
     ROM U_ROM (
         .addr(instrMemAddr),
@@ -16,6 +20,19 @@ module MCU (
         .clk(clk),
         .reset(reset),
         .instrCode(instrCode),
-        .instrMemAddr(instrMemAddr)
+        .instrMemAddr(instrMemAddr),
+        .strb(strb),
+        .busWe(busWe),
+        .busAddr(busAddr),
+        .busWData(busWData),
+        .busRData(busRData)
+    );
+    RAM U_RAM (
+        .clk(clk),
+        .strb(strb),
+        .we(busWe),
+        .addr(busAddr),
+        .wData(busWData),
+        .rData(busRData)
     );
 endmodule

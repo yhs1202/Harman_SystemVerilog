@@ -4,12 +4,18 @@ module CPU_RV32I (
     input logic clk,
     input logic reset,
     input logic [31:0] instrCode,
-    output logic [31:0] instrMemAddr
+    output logic [31:0] instrMemAddr,
+    output logic [2:0] strb,
+    output logic busWe,
+    output logic [31:0] busAddr,
+    output logic [31:0] busWData,
+    input logic [31:0] busRData
 );
 
     logic       regFileWe;
     logic [3:0] aluControl;
     logic       aluSrcMuxSel;
+    logic [1:0] MemtoReg_Sel;
 
     ControlUnit U_ControlUnit (.*);
     DataPath U_DataPath (.*);

@@ -8,13 +8,26 @@ module DataPath (
     input  logic        regFileWe,
     input  logic        aluSrcMuxSel,
     input  logic [ 3:0] aluControl,
-    output logic [31:0] instrMemAddr
+    input  logic  [1:0] MemtoReg_Sel,
+
+    output logic [31:0] instrMemAddr,
+    output logic [31:0] busAddr,
+    output logic [31:0] busWData,
+    input  logic [31:0] busRData
+
 );
     logic [31:0] RFData1, RFData2, aluResult;
     logic [31:0] PCOutData, PC_4_AdderResult;
     logic [31:0] immExt, aluSrcMuxOut;
 
+    wire [31:0] MemtoReg_Data = (MemtoReg_Sel == 2'b00) ? aluResult :
+                                (MemtoReg_Sel == 2'b01) ? busRData :
+                                (MemtoReg_Sel == 2'b10) ? PC_4_AdderResult : 
+                                (MemtoReg_Sel == 2'b11) ? immExt : 32'b0;
+
     assign instrMemAddr = PCOutData;
+    assign busAddr      = aluResult;
+    assign busWData     = RFData2;
 
     RegisterFile U_RegFile (
         .clk(clk),
@@ -22,7 +35,7 @@ module DataPath (
         .RA1(instrCode[19:15]),
         .RA2(instrCode[24:20]),
         .WA (instrCode[11:7]),
-        .WD (aluResult),
+        .WD (MemtoReg_Data),
         .RD1(RFData1),
         .RD2(RFData2)
     );
@@ -161,7 +174,18 @@ module immExtend (
     always_comb begin
         immExt = 32'bx;
         case (opcode)
-            `OP_TYPE_I: immExt = {{20{instrCode[31]}}, instrCode[31:20]};
+            `OP_TYPE_I: 
+                case (instrCode[14:12])
+                    // SLLI, SRLI, SRAI
+                    3'b001, 3'b101: immExt = {27'b0, instrCode[24:20]}; // zero-extend for shift instructions
+                    default: immExt = {{20{instrCode[31]}}, instrCode[31:20]}; // sign-extend for other I-type instructions
+                endcase
+            `OP_TYPE_I_LOAD: immExt = {{20{instrCode[31]}}, instrCode[31:20]};
+            `OP_TYPE_S: immExt = {{20{instrCode[31]}}, instrCode[31:25], instrCode[11:7]};
+            `OP_TYPE_U_LUI: immExt = {instrCode[31:12], 12'b0};
+
+            default: immExt = 32'b0;
+            
         endcase
     end
 endmodule
