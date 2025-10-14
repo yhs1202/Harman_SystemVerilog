@@ -94,7 +94,7 @@ module ROM (
         end
 
         /* S-type and I-type (load) test instructions */
-        if (0) begin
+        if (1) begin
             /* S, I_load test scenario in asm code
                 ; S-type (store)
                 li  x1, 0x12345678  ; 0,4 (x1 <= 0x1234_5678)

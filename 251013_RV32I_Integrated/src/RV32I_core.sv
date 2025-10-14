@@ -3,8 +3,15 @@ module RV32I_core (
     input logic clk,
     input logic rst,
     input logic [31:0] instr_code,
+
+    input logic [31:0] MEM_r_data,
     
-    output logic [31:0] PC
+    output logic [31:0] PC,
+    output logic MemRead,
+    output logic MemWrite,
+    output logic [31:0] ALU_result,
+    output logic [31:0] MEM_w_data,
+    output logic [3:0] byte_enable // for future use
 );
 
     // control signals
@@ -14,11 +21,6 @@ module RV32I_core (
     logic RegWrite;
     logic Branch;
     logic [3:0] ALUControl; // see define.svh
-    logic [31:0] ALU_result;
-    logic MemRead;
-    logic MemWrite;
-    logic [31:0] MEM_w_data;
-    logic [31:0] MEM_r_data;
     logic branch_taken;
     logic [1:0] PCSrc;
 
@@ -52,19 +54,20 @@ module RV32I_core (
 
         .ALU_result(ALU_result),
         .MEM_w_data(MEM_w_data),
+        .byte_enable(byte_enable),
         .branch_taken(branch_taken),
         .PC(PC)
     );
 
-    RAM U_RAM (
-        .clk(clk),
-        .MemRead(MemRead),
-        .MemWrite(MemWrite),
-        .func3(instr_code[14:12]),  // 0-> b, 1-> h, 2-> w, 4-> ub, 5-> uh
-        .addr(ALU_result),
-        .w_data(MEM_w_data),
+    // RAM U_RAM (
+    //     .clk(clk),
+    //     .MemRead(MemRead),
+    //     .MemWrite(MemWrite),
+    //     .func3(instr_code[14:12]),  // 0-> b, 1-> h, 2-> w, 4-> ub, 5-> uh
+    //     .addr(ALU_result),
+    //     .w_data(MEM_w_data),
 
-        .r_data(MEM_r_data)
-    );
+    //     .r_data(MEM_r_data)
+    // );
 
 endmodule
