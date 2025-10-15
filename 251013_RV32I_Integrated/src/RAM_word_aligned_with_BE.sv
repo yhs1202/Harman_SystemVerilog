@@ -35,7 +35,7 @@ module RAM_with_BE (
     always_comb begin
         r_data = 32'b0; // Default value
         if (MemRead) begin
-            r_data <= mem[addr];
+            r_data = mem[addr];
         end
     end
 endmodule
