@@ -44,4 +44,7 @@ module RV32I_MCU (
 
         .r_data(MEM_r_data)
     );
+    // for measureing LUT
+    (* keep = "true" *) logic [7:0] debug_led;
+    assign debug_led = U_RV32I_CORE.PC[9:2];
 endmodule
