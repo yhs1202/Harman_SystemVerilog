@@ -10,14 +10,14 @@ module datapath (
     input logic ALUSrc_A,           // 0: rs1, 1: PC (for AUIPC)
     input logic ALUSrc_B,           // 0: rs2, 1: imm_ext (for I-type, S-type, B-type, U-type)
     input logic RegWrite,
-    input logic [31:0] MEM_r_data,
+    input logic [31:0] RAM_r_data,
     input logic Branch,
     input logic [1:0] PCSrc,        // 0: PC+4, 1: branch target, 2: jal target, 3: jalr target
     input logic [3:0] ALUControl,
     input logic [1:0] MemtoReg,     // 0: ALU result, 1: memory data, 2: PC+4 (for JAL), 3: imm (for LUI)
 
     output logic [31:0] ALU_result, // to data memory addr (for store)
-    output logic [31:0] MEM_w_data, // to data memory write data (for store)
+    output logic [31:0] RAM_w_data, // to data memory write data (for store)
     output logic [3:0] byte_enable, // for memory (load/store)
     output logic branch_taken,
     output logic [31:0] PC
@@ -30,21 +30,18 @@ module datapath (
     logic [31:0] PC_Plus4;
     logic [31:0] imm_ext;
 
-    logic [31:0] BE_in_w_data; // to BE_logic (store)
-    logic [31:0] BE_in_r_data; // from BE_logic (load)
-
-    // assign MEM_w_data = RD2;
-    assign BE_in_w_data = RD2;
+    logic [31:0] BE_out_r_data; // Write-back data for load
+    
     // 0: rs1, 1: PC (for AUIPC)
     assign alu_a = (ALUSrc_A) ? PC : RD1;
     // 0: rs2, 1: imm_ext (for I-type, S-type, B-type, U-type)
     assign alu_b = (ALUSrc_B) ? imm_ext : RD2;
 
-    // 
-    assign REG_w_data = (MemtoReg == 2'b00) ? ALU_result : // for R-type, I-type, AUIPC
-                            (MemtoReg == 2'b01) ? BE_in_r_data : // for load
-                            (MemtoReg == 2'b10) ? PC_Plus4 :   // for JAL
-                            imm_ext; // for LUI
+    // MemtoReg Mux
+    assign REG_w_data = (MemtoReg == 2'b00) ? ALU_result :      // for R-type, I-type, AUIPC
+                        (MemtoReg == 2'b01) ? BE_out_r_data :   // for load
+                        (MemtoReg == 2'b10) ? PC_Plus4 :        // for JAL
+                        imm_ext; // for LUI
 
     
     regfile U_REGFILE (
@@ -101,11 +98,11 @@ module datapath (
     byte_enable_logic U_BYTE_ENABLE_LOGIC (
         .func3 (instr_code[14:12]),
         .addr (ALU_result),
-        .w_data (BE_in_w_data),  // to BE_logic (store)
-        .r_data (BE_in_r_data),  // to BE_logic (load)
+        .w_data (RD2),          // from regfile (store)
+        .r_data (RAM_r_data),   // from RAM (load)
 
-        .BE_w_data (MEM_w_data),  // to memory (store) with byte enable
-        .BE_r_data (MEM_r_data),  // to memory (load) with byte enable
+        .BE_w_data (RAM_w_data),    // from rs2 to RAM with byte enable (store)
+        .BE_r_data (BE_out_r_data), // from RAM to MemtoReg_Mux with byte enable (load)
         .byte_enable (byte_enable)
     );
 endmodule

@@ -10,8 +10,8 @@ module RV32I_MCU (
     logic MemRead;
     logic MemWrite;
     logic [31:0] ALU_result;
-    logic [31:0] MEM_r_data;
-    logic [31:0] MEM_w_data;
+    logic [31:0] RAM_r_data;
+    logic [31:0] RAM_w_data;
     logic [3:0] byte_enable;
     
 
@@ -24,13 +24,13 @@ module RV32I_MCU (
         .clk (clk),
         .rst (rst),
         .instr_code (instr_code),
-        .MEM_r_data (MEM_r_data),
+        .RAM_r_data (RAM_r_data),
 
         .PC (PC),
         .MemRead (MemRead),
         .MemWrite (MemWrite),
         .ALU_result (ALU_result),
-        .MEM_w_data (MEM_w_data),
+        .RAM_w_data (RAM_w_data),
         .byte_enable (byte_enable)
     );
 
@@ -40,9 +40,9 @@ module RV32I_MCU (
         .MemWrite(MemWrite),
         .byte_enable(byte_enable),
         .addr(ALU_result),
-        .w_data(MEM_w_data),
+        .w_data(RAM_w_data),
 
-        .r_data(MEM_r_data)
+        .r_data(RAM_r_data)
     );
     // for measureing LUT
     (* keep = "true" *) logic [7:0] debug_led;

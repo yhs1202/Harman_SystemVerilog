@@ -4,13 +4,13 @@ module RV32I_core (
     input logic rst,
     input logic [31:0] instr_code,
 
-    input logic [31:0] MEM_r_data,
+    input logic [31:0] RAM_r_data,
     
     output logic [31:0] PC,
     output logic MemRead,
     output logic MemWrite,
     output logic [31:0] ALU_result,
-    output logic [31:0] MEM_w_data,
+    output logic [31:0] RAM_w_data,
     output logic [3:0] byte_enable // for future use
 );
 
@@ -46,14 +46,14 @@ module RV32I_core (
         .ALUSrc_A(ALUSrc_A),
         .ALUSrc_B(ALUSrc_B),
         .RegWrite(RegWrite),
-        .MEM_r_data(MEM_r_data),
+        .RAM_r_data(RAM_r_data),
         .Branch(Branch),
         .PCSrc(PCSrc),
         .ALUControl(ALUControl),
         .MemtoReg(MemtoReg),
 
         .ALU_result(ALU_result),
-        .MEM_w_data(MEM_w_data),
+        .RAM_w_data(RAM_w_data),
         .byte_enable(byte_enable),
         .branch_taken(branch_taken),
         .PC(PC)
@@ -65,9 +65,9 @@ module RV32I_core (
     //     .MemWrite(MemWrite),
     //     .func3(instr_code[14:12]),  // 0-> b, 1-> h, 2-> w, 4-> ub, 5-> uh
     //     .addr(ALU_result),
-    //     .w_data(MEM_w_data),
+    //     .w_data(RAM_w_data),
 
-    //     .r_data(MEM_r_data)
+    //     .r_data(RAM_r_data)
     // );
 
 endmodule
