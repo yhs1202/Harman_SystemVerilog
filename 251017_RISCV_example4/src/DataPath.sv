@@ -22,7 +22,7 @@ module DataPath (
     // RAM BUS
     output logic [31:0] busAddr,
     output logic [31:0] busWData,
-    input  logic [31:0] busRData,
+    input  logic [31:0] busRData
 
 );
     logic [31:0] RFData1, RFData2, aluResult;
@@ -35,7 +35,7 @@ module DataPath (
     logic [31:0] PC_ImmAdderSrcMuxOut;
 
 
-    logic [31:0] DecReg_RFRata1, DecReg_RFRata2, DecReg_immExt;
+    logic [31:0] DecReg_RFData1, DecReg_RFData2, DecReg_immExt;
     logic [31:0] ExeReg_aluResult, ExeReg_RFData2, ExeReg_PCSrcMuxOut;
     logic [31:0] MemAccReg_busRData;
 
@@ -59,26 +59,26 @@ module DataPath (
         .clk  (clk),
         .reset(reset),
         .d    (RFData1),
-        .q    (DecReg_RFRata1)
+        .q    (DecReg_RFData1)
     );
 
     register U_DecReg_RFRD2 (
         .clk  (clk),
         .reset(reset),
         .d    (RFData2),
-        .q    (DecReg_RFRata2)
+        .q    (DecReg_RFData2)
     );
 
     mux_2x1 U_AluSrcMux (
         .sel(aluSrcMuxSel),
-        .x0 (dexreg_RFRata2),
+        .x0 (DecReg_RFData2),
         .x1 (immExt),
         .y  (aluSrcMuxOut)
     );
 
     alu U_ALU (
         .aluControl(aluControl),
-        .a         (RFData1),
+        .a         (DecReg_RFData1),
         .b         (aluSrcMuxOut),
         .result    (aluResult),
         .btaken    (btaken)
@@ -94,7 +94,7 @@ module DataPath (
     register U_ExeReg_RFRD2 (
         .clk  (clk),
         .reset(reset),
-        .d    (DecReg_RFRata2),
+        .d    (DecReg_RFData2),
         .q    (ExeReg_RFData2)
     );
     register U_MemAccReg_ReadData (

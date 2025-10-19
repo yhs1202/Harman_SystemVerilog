@@ -174,11 +174,11 @@
     (20) (5)  (7)
     */
     function automatic [31:0] LUI (input [4:0] rd, input [19:0] imm);
-        return {imm, rd, `OP_TYPE_U_LUI};
+        return {imm, rd, `OP_TYPE_LU};
     endfunction
 
     function automatic [31:0] AUIPC (input [4:0] rd, input [19:0] imm);
-        return {imm, rd, `OP_TYPE_U_AUIPC};
+        return {imm, rd, `OP_TYPE_AU};
     endfunction
 
     /* ---------- J-type ----------
@@ -193,11 +193,11 @@
     (12) (5)   (3)   (5)  (7)
     */
     function automatic [31:0] JAL (input [4:0] rd, input [20:0] imm);
-        return {imm[20], imm[10:1], imm[11], imm[19:12], rd, `OP_TYPE_J_JAL};
+        return {imm[20], imm[10:1], imm[11], imm[19:12], rd, `OP_TYPE_J};
     endfunction
 
     function automatic [31:0] JALR (input [4:0] rd, input [4:0] rs1, input [11:0] imm);
-        return {imm, rs1, 3'b000, rd, `OP_TYPE_I_JALR};
+        return {imm, rs1, 3'b000, rd, `OP_TYPE_JL};
     endfunction
 
     // ---------- SYSTEM ----------

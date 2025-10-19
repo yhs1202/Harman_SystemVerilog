@@ -50,13 +50,25 @@ module ControlUnit (
         next_state = state;
         case (state)
             FETCH:      next_state = DECODE;
-            DECODE: next_state = R_EXE; // default
-            R_EXE:  next_state = FETCH;
-                
+            DECODE: 
+                case (opcode)
+                    `OP_TYPE_R:  next_state = R_EXE;
+                    `OP_TYPE_I:  next_state = I_EXE;
+                    `OP_TYPE_B:  next_state = B_EXE;
+                    `OP_TYPE_LU:  next_state = LU_EXE;
+                    `OP_TYPE_AU:  next_state = AU_EXE;
+                    `OP_TYPE_J:  next_state = J_EXE;
+                    `OP_TYPE_JL:  next_state = JL_EXE;
+                    `OP_TYPE_S:  next_state = S_EXE;
+                    `OP_TYPE_L:  next_state = L_EXE;
+                    default:    next_state = FETCH;
+                endcase
+            S_EXE:     next_state = S_MEM;
+            L_EXE:     next_state = L_MEM;
+            L_MEM:     next_state = L_WB;
+            default:    next_state = FETCH;
         endcase
     end
-
-
 
     always_comb begin
         signals = 10'b0;
@@ -68,6 +80,34 @@ module ControlUnit (
                 signals = 10'b0_1_0_0_000_0_0_0;
                 aluControl = operator;
             end
+            I_EXE: begin
+                signals = 10'b0_1_1_0_000_0_0_0;
+                if (operator == 4'b1101) aluControl = operator;
+                else aluControl = {1'b0, operator[2:0]};
+            end
+            B_EXE: begin
+                signals = 10'b0_0_0_0_000_1_0_0;
+                aluControl = operator;
+            end
+            LU_EXE: signals = 10'b0_1_0_0_010_0_0_0;
+            AU_EXE: signals = 10'b0_1_0_0_011_0_0_0;
+            J_EXE:  signals = 10'b0_1_0_0_100_0_1_0;
+            JL_EXE: signals = 10'b0_1_0_0_100_0_1_1;
+
+            S_EXE: begin
+                signals = 10'b0_0_1_0_000_0_0_0;
+                aluControl = `ADD;
+            end
+                
+            S_MEM:  signals = 10'b0_0_0_1_000_0_0_0;
+
+            L_EXE: begin
+                signals = 10'b0_0_1_0_000_0_0_0;
+                aluControl = `ADD;
+            end
+            L_MEM:  signals = 10'b0_0_0_0_001_0_0_0;
+            L_WB:   signals = 10'b0_1_0_0_001_0_0_0;
+
         endcase
     end
     /*
@@ -83,7 +123,6 @@ module ControlUnit (
             `OP_TYPE_JL:     signals = 9'b1_0_0_100_0_1_1;
         endcase
     end
-    */
 
     always_comb begin
         aluControl = `ADD;
@@ -96,4 +135,5 @@ module ControlUnit (
             end
         endcase
     end
+    */
 endmodule

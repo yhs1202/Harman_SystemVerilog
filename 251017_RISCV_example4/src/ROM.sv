@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`include "asm2hex_macro.svh"
 
 module ROM (
     input  logic [31:0] addr,
@@ -31,8 +32,35 @@ module ROM (
         rom[15] = 32'b000000001100_00000_010_10000_0000011;// lw x16, 12(x0);
         //rom[x]=32'b    imm(20)            _ rd  _ opcode;// L-Type
         rom[16] =   32'b00010000000000000000_10001_0110111;// lui x17, 0x10000000;
+
+        // addi x1, x0, 5
+        rom[0] = ADDI(5'd1, 5'd0, 12'd5);
+        // addi x2, x0, 10
+        rom[1] = ADDI(5'd2, 5'd0, 12'd10);
+        // addi x3, x0, 15
+        rom[2] = ADDI(5'd3, 5'd0, 12'd15);
+
+        // add x4, x2, x1
+        rom[3] = ADD(5'd4, 5'd2, 5'd1);
+        // sub x5, x2, x1
+        rom[4] = SUB(5'd5, 5'd2, 5'd1);
+        // and x6, x3, x0
+        rom[5] = AND(5'd6, 5'd3, 5'd0);
+        // or  x7, x3, x0
+        rom[6] = OR(5'd7, 5'd3, 5'd0);
+
+        // addi x9, x1, 1
+        rom[7] = ADDI(5'd9, 5'd1, 12'd1);
+        // andi x10, x2, 4
+        rom[8] = ANDI(5'd10, 5'd2, 12'd4);
+        // slli x11, x1, 3
+        rom[9] = SLLI(5'd11, 5'd1, 5'd3);
+        // slli x12, x1, 9
+        rom[10] = SLLI(5'd12, 5'd1, 5'd9);
+        // slli x13, x1, 30
+        rom[11] = SLLI(5'd13, 5'd1, 5'd30);
         */
-        $readmemh("./memdump.mem", rom);
+        $readmemh("./swap.mem", rom);
     end
 
     assign data = rom[addr[31:2]];

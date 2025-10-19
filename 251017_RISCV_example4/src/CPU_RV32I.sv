@@ -12,9 +12,10 @@ module CPU_RV32I (
     input  logic [31:0] busRData
 );
 
+    logic       PCEn;
     logic       regFileWe;
-    logic [3:0] aluControl;
     logic       aluSrcMuxSel;
+    logic [3:0] aluControl;
     logic [2:0] RFWDSrcMuxSel;
     logic       branch;
     logic       jal;
