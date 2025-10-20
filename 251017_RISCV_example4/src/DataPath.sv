@@ -135,7 +135,7 @@ module DataPath (
     mux_2x1 U_PC_ImmAdderSrcMux (
         .sel(jalr),
         .x0 (PCOutData),
-        .x1 (RFData1),
+        .x1 (DecReg_RFData1),
         .y  (PC_ImmAdderSrcMuxOut)
     );
 
