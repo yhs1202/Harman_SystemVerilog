@@ -22,19 +22,15 @@ module APB_test_master (
         for (int i = 0; i < 100; i++) begin
 
             @(posedge PCLK);
-            transfer = 1'b1;    // IDLE -> SETUP --> ACCESS (PENABLE = 1)
+            transfer = 1'b1;    // IDLE -> SETUP --> ACCESS
             addr = 32'h1000_0000 + $urandom_range(14'h3FFF, 14'h0000);  // PSELx = 1
             wdata = $urandom;
             $display("0x%0h", addr);
-            @(posedge ready);   // PSEL && PENABLE
             write = 1'b1;
-            transfer = 1'b0;
-            @(negedge ready);
-
-
-
-            repeat (5) @(posedge PCLK);
-            #10;
+            @(posedge ready);   // PSEL && PENABLE
+            transfer = 1'b0;    // Slave ready : PREADY = 1 -> Master end
+            @(negedge ready);   // Wait for Next transfer
+            repeat (5) @(posedge PCLK); // Wait some time
         end
 
         // Finish simulation
