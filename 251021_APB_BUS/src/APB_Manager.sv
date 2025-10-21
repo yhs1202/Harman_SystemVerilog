@@ -16,11 +16,11 @@ module APB_Manager (
     // APB Interface Signals
     input logic [31:0] PRDATA0,
     input logic [31:0] PRDATA1,
-    input logic [31:0] PRDATA3,
+    input logic [31:0] PRDATA2,
     input logic [31:0] PRDATA3,
     input logic PREADY0,
     input logic PREADY1,
-    input logic PREADY3,
+    input logic PREADY2,
     input logic PREADY3,
 
     // Internal Interface Signals
@@ -101,12 +101,13 @@ module APB_Manager (
         case (state_reg)
             IDLE: begin
                 decoder_en = 1'b0;
+                PENABLE = 1'b0;
                 if (transfer) begin
                     state_next = SETUP;
                     // Latch signals
-                    temp_write_next = temp_write_reg;
-                    temp_addr_next = temp_addr_reg;
-                    temp_wdata_next = temp_wdata_reg;
+                    temp_write_next = write;
+                    temp_addr_next = addr;
+                    temp_wdata_next = wdata;
                 end
             end
             SETUP: begin
@@ -154,7 +155,7 @@ module APB_Decoder #(
     output logic [$clog2(BUS_NUM)-1:0] mux_sel  // PSEL
 );
     always_comb begin : decode_logic_y
-        y = 'b0;
+        y = 4'b0;
         if (en) begin
             casex (addr_sel)
                 32'h1000_0xxx: y = 4'b0001;     // RAM
@@ -166,13 +167,13 @@ module APB_Decoder #(
     end
 
     always_comb begin : decode_logic_mux_sel
-        mux_sel = 'dx;
+        mux_sel = 2'dx;
         if (en) begin
             casex (addr_sel)
-                32'h1000_0xxx: y = 'd0;     // RAM
-                32'h1000_1xxx: y = 'd1;     // PERIPH_0
-                32'h1000_2xxx: y = 'd2;     // PERIPH_1
-                32'h1000_3xxx: y = 'd3;     // PERIPH_2
+                32'h1000_0xxx: mux_sel = 2'd0;     // RAM
+                32'h1000_1xxx: mux_sel = 2'd1;     // PERIPH_0
+                32'h1000_2xxx: mux_sel = 2'd2;     // PERIPH_1
+                32'h1000_3xxx: mux_sel = 2'd3;     // PERIPH_2
             endcase
         end
     end
