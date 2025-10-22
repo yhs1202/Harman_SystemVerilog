@@ -24,6 +24,7 @@ module APB_test_slave (
             PREADY <= 1'b0;
             PRDATA <= 32'b0;
         end else begin
+            // w/o wait states
             PREADY <= 1'b0;
             if (PSEL && PENABLE) begin
                 PREADY <= 1'b1;
@@ -34,8 +35,6 @@ module APB_test_slave (
                     // Read operation
                     PRDATA <= memory[PADDR[5:2]];
                 end
-            end else begin
-                PREADY <= 1'b0;
             end
         end
     end

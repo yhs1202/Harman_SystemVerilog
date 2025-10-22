@@ -1,7 +1,8 @@
 `timescale 1ns/1ps
-module tb_APB_Manager ();
-    logic PCLK;
-    logic PRESET;
+module APB_Interface_top (
+    input logic PCLK,
+    input logic PRESET
+);
 
     logic [31:0] PADDR;
     logic PWRITE;
@@ -53,19 +54,5 @@ module tb_APB_Manager ();
         .PRDATA(PRDATA3),
         .PREADY(PREADY3)
     );
-
-    always #10 PCLK = ~PCLK;
-
-    initial begin
-        PCLK = 1'b0;
-        PRESET = 1'b1;
-        #25;
-        PRESET = 1'b0;
-
-
-
-        #10000;
-        $finish;
-    end
     
 endmodule
