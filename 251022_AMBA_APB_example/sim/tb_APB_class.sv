@@ -12,59 +12,94 @@ interface apb_master_if(
     logic ready;
 endinterface //apb_master_if
 
-
-class apbSignal;
+class transaction;
     logic transfer;
     logic write;
+    logic [31:0] rdata;
     rand logic [31:0] addr;
     rand logic [31:0] wdata;    // random data for write
 
     constraint addr_c {
         addr inside {
-            [32'h1000_0000:32'h1000_0FFF],  // slv0
-            [32'h1000_1000:32'h1000_1FFF],  // slv1
-            [32'h1000_2000:32'h1000_2FFF],  // slv2
-            [32'h1000_3000:32'h1000_3FFF]   // slv3
+            [32'h1000_0000:32'h1000_000C],  // slv0
+            [32'h1000_1000:32'h1000_100C],  // slv1
+            [32'h1000_2000:32'h1000_200C],  // slv2
+            [32'h1000_3000:32'h1000_300C]   // slv3
         };
 
         // 4-byte aligned
         addr % 4 == 0;
     }
 
+    task automatic print(string name);
+        $display("[%s], tranfer=%h, write=%0h, addr=0x%h, wdata=0x%h, rdata=0x%h",
+                 name, transfer, write, addr, wdata, rdata);
+    endtask //print
+endclass //transaction
+
+
+class apbSignal;
+    transaction tr;
+
     virtual apb_master_if m_if;
 
     function new(virtual apb_master_if m_if);
         this.m_if = m_if;
+        this.tr = new();
         
     endfunction //new()
 
 
     task automatic send();
-        m_if.transfer <= 1'b1;
-        m_if.write <= 1'b1; // write
-        m_if.addr <= addr;
-        m_if.wdata <= wdata;
+        tr.transfer = 1'b1;
+        tr.write    = 1'b1; // write
+        m_if.transfer <= tr.transfer;
+        m_if.write <= tr.write;
+        m_if.addr <= tr.addr;
+        m_if.wdata <= tr.wdata;
 
         @(posedge m_if.clk);
         m_if.transfer <= 1'b0;
 
         @(posedge m_if.clk);
         wait (m_if.ready);
+        tr.print("SEND");
         @(posedge m_if.clk);
     endtask //automatic
 
 
     task automatic receive();
-        m_if.transfer <= 1'b1;
-        m_if.write <= 1'b0; // read
-        m_if.addr <= addr;
+        tr.transfer = 1'b1;
+        tr.write    = 1'b0; // read
+        m_if.transfer <= tr.transfer;
+        m_if.write <= tr.write;
+        m_if.addr <= tr.addr;
 
         @(posedge m_if.clk);
         m_if.transfer <= 1'b0;
 
         @(posedge m_if.clk);
         wait (m_if.ready);
+        tr.rdata = m_if.rdata;
+        tr.print("RECEIVE");
         @(posedge m_if.clk);
+    endtask //automatic
+
+    task automatic compare();
+        if (tr.wdata == tr.rdata) begin
+            $display("PASS");
+        end else begin
+            $display("FAIL: WDATA=0x%h, RDATA=0x%h", tr.wdata,  tr.rdata);
+        end
+    endtask //automatic
+
+    task automatic run(int count);
+        repeat (count) begin
+            tr.randomize();
+            send();
+            receive();
+            compare();
+        end
     endtask //automatic
 
     
@@ -166,51 +201,12 @@ module tb_APB ();
         #10 PRESET = 0;
     end
 
-
-
     initial begin
-        /*
-        // new() -> heap allocation
-        // create apbSignal objects
-        apbUART = new(m_if);
-        apbUART_clone = apbUART; // shallow copy
-        apbGPIO = new(m_if);
-        apbTIMER = new(m_if);
-
-        repeat (3) @(posedge PCLK);
-
-        apbUART.randomize();
-        apbUART.send(32'h1000_0000);
-        apbUART.read(32'h1000_0000);
-        apbUART_clone.receive(32'h1000_0000);
-
-        apbGPIO.randomize();
-        apbGPIO.send(32'h1000_1000);
-        apbGPIO.read(32'h1000_1000);
-        apbGPIO.receive(32'h1000_1000);
-
-        apbTIMER.randomize();
-        apbTIMER.send(32'h1000_2000);
-        apbTIMER.read(32'h1000_2000);
-        apbTIMER.receive(32'h1000_2000);
-        */
-
-        // single apbSignal instance (HW)
         apbInst = new(m_if);
         wait (!PRESET);
         repeat (3) @(posedge PCLK);
 
-        repeat (50) begin
-            // 1. randomize signals
-            apbInst.randomize();
-
-            // 2. write (send)
-            apbInst.send();
-
-            // 3. read (receive)
-            apbInst.receive();
-            repeat (3) @(posedge PCLK);
-        end
+        apbInst.run(100);
 
         $stop;
     end
