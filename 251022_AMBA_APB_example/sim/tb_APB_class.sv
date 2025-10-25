@@ -130,28 +130,28 @@ module tb_APB ();
         .ready      (m_if.ready)
     );
 
-    APB_slave dut_slave_0 (
+    APB_Slave dut_slave_0 (
         .*,
         .PSEL   (PSEL0),
         .PRDATA (PRDATA0),
         .PREADY (PREADY0)
     );
 
-    APB_slave dut_slave_1 (
+    APB_Slave dut_slave_1 (
         .*,
         .PSEL   (PSEL1),
         .PRDATA (PRDATA1),
         .PREADY (PREADY1)
     );
 
-    APB_slave dut_slave_2 (
+    APB_Slave dut_slave_2 (
         .*,
         .PSEL   (PSEL2),
         .PRDATA (PRDATA2),
         .PREADY (PREADY2)
     );
 
-    APB_slave dut_slave_3 (
+    APB_Slave dut_slave_3 (
         .*,
         .PSEL   (PSEL3),
         .PRDATA (PRDATA3),

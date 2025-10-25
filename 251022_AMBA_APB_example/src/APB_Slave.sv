@@ -1,6 +1,6 @@
 `timescale 1ns/1ps  
 
-module APB_slave (
+module APB_Slave (
     // glob
     input logic PCLK,
     input logic PRESET,
