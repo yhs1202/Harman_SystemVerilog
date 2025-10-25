@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module tb_APB ();
+module tb_APB_task ();
     // Global Signals
     logic PCLK;
     logic PRESET;
