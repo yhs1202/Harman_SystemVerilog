@@ -50,7 +50,7 @@ $(BIT): $(SOURCES) $(XDC)
 	@test -f "$(BIT)" || { echo "ERROR: expected bitstream '$(BIT)' not found"; exit 1; }
 
 clean:
-	@rm -rf $(OUTDIR) .Xil .cache .runs .sim .gen *log *jou *str
+	@rm -rf $(OUTDIR) .Xil .cache .runs .sim .gen *.log *.jou *.str
 
 veryclean: clean
 	@rm -rf .out .vscode .idea Thumbs.db .DS_Store
