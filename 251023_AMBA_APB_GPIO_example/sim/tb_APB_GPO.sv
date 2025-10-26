@@ -5,7 +5,7 @@ module tb_APB_GPO ();
     logic PCLK;
     logic PRESET;
     // APB Interface Signals
-    logic [3:0] PADDR;
+    logic [2:0] PADDR;
     logic PWRITE;
     logic PSEL;
     logic PENABLE;
@@ -41,17 +41,17 @@ module tb_APB_GPO ();
 
         // write to GPO
         @(posedge PCLK);
-        gpo_write(3'd0, 4'hf); // GPO <= 4'b1111
-        gpo_write(3'd4, 4'hf);
-        gpo_write(3'd4, 4'h0);
-        gpo_write(3'd4, 4'hf);
-        gpo_write(3'd4, 4'h0);
+        gpo_write(3'd0, 32'hf); // GPO <= 4'b1111
+        gpo_write(3'd4, 32'hf);
+        gpo_write(3'd4, 32'h0);
+        gpo_write(3'd4, 32'hf);
+        gpo_write(3'd4, 32'h0);
 
-        gpo_write(3'd0, 4'h0); // high-z
-        gpo_write(3'd4, 4'hf);
-        gpo_write(3'd4, 4'h0);
-        gpo_write(3'd4, 4'hf);
-        gpo_write(3'd4, 4'h0);
+        gpo_write(3'd0, 32'h0); // high-z
+        gpo_write(3'd4, 32'hf);
+        gpo_write(3'd4, 32'h0);
+        gpo_write(3'd4, 32'hf);
+        gpo_write(3'd4, 32'h0);
     end
 
 endmodule

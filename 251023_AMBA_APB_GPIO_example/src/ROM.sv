@@ -4,10 +4,10 @@ module ROM (
     input  logic [31:0] addr,
     output logic [31:0] data
 );
-    logic [31:0] rom[0:2**10-1];
+    logic [31:0] rom[0:2**15-1];
 
     initial begin
-        $readmemh("code.mem", rom);
+        $readmemh("test_APB_GPIO.mem", rom);
         /*
         //rom[x]=32'b   f7  _ rs2 _ rs1 _ f3_ rd  _ opcode;// R-Type
         rom[0] = 32'b0000000_00001_00010_000_00100_0110011;// add x4, x2, x1

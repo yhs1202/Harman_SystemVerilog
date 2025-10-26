@@ -14,9 +14,9 @@ if {[info exists ::env(TOP)]} {
     set top $::env(TOP)
 } else {
     # Top-level module name (edit this)
-    set top "APB_Manager"                    ;# Top-level module name (edit this)
+    set top "MCU"                    ;# Top-level module name (edit this)
 }
-set tb_top "APB_Manager_class"                 ;# Testbench top module name (edit this)
+set tb_top "tb_$top"                 ;# Testbench top module name (edit this)
 set part "xc7a35ticsg324-1L"         ;# Device part (example: Basys-3)
 set srcdir   "$proj_dir/src"
 set simdir   "$proj_dir/sim"

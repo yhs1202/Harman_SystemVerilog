@@ -18,13 +18,16 @@ module ControlUnit (
     output logic        jalr,
     // data memory side port
     output logic [ 2:0] strb,
-    output logic        busWe
+    output logic        busWe,
+
+    output logic transfer,
+    input  logic ready
 );
     wire  [6:0] opcode = instrCode[6:0];
     wire  [3:0] operator = {instrCode[30], instrCode[14:12]};
-    logic [9:0] signals;
+    logic [10:0] signals;
 
-    assign {PCEn, regFileWe, aluSrcMuxSel, busWe, RFWDSrcMuxSel, branch, jal, jalr} = signals;
+    assign {PCEn, regFileWe, aluSrcMuxSel, busWe, RFWDSrcMuxSel, branch, jal, jalr, transfer} = signals;
     assign strb = instrCode[14:12];
 
     typedef enum {
@@ -80,42 +83,42 @@ module ControlUnit (
             J_EXE:  next_state = FETCH;
             JL_EXE: next_state = FETCH;
             S_EXE:  next_state = S_MEM;
-            S_MEM:  next_state = FETCH;
+            S_MEM:  if (ready) next_state = FETCH;
             L_EXE:  next_state = L_MEM;
-            L_MEM:  next_state = L_WB;
+            L_MEM:  if (ready) next_state = L_WB;
             L_WB:   next_state = FETCH;
         endcase
     end
 
     always_comb begin
-        signals = 10'b0;
+        signals = 11'b0;
         aluControl = `ADD;
         case (state)
             //{PCEn, regFileWe, aluSrcMuxSel, dataWe, RFWDSrcMuxSel(3), branch, jal, jalr} 
-            FETCH:  signals = 10'b1_0_0_0_000_0_0_0;
-            DECODE: signals = 10'b0_0_0_0_000_0_0_0;
+            FETCH:  signals = 11'b1_0_0_0_000_0_0_0_0;
+            DECODE: signals = 11'b0_0_0_0_000_0_0_0_0;
             R_EXE: begin
-                signals = 10'b0_1_0_0_000_0_0_0;
+                signals = 11'b0_1_0_0_000_0_0_0_0;
                 aluControl = operator;
             end
             I_EXE: begin
-                signals = 10'b0_1_1_0_000_0_0_0;
+                signals = 11'b0_1_1_0_000_0_0_0_0;
                 if (operator == 4'b1101) aluControl = operator;
                 else aluControl = {1'b0, operator[2:0]};
             end
             B_EXE: begin
-                signals = 10'b0_0_0_0_000_1_0_0;
+                signals = 11'b0_0_0_0_000_1_0_0_0;
                 aluControl = operator;
             end
-            LU_EXE: signals = 10'b0_1_0_0_010_0_0_0;
-            AU_EXE: signals = 10'b0_1_0_0_011_0_0_0;
-            J_EXE:  signals = 10'b0_1_0_0_100_0_1_0;
-            JL_EXE: signals = 10'b0_1_0_0_100_0_1_1;
-            S_EXE:  signals = 10'b0_0_1_0_000_0_0_0;
-            S_MEM:  signals = 10'b0_0_1_1_000_0_0_0;
-            L_EXE:  signals = 10'b0_0_1_0_001_0_0_0;
-            L_MEM:  signals = 10'b0_0_1_0_001_0_0_0;
-            L_WB:   signals = 10'b0_1_1_0_001_0_0_0;
+            LU_EXE: signals = 11'b0_1_0_0_010_0_0_0_0;
+            AU_EXE: signals = 11'b0_1_0_0_011_0_0_0_0;
+            J_EXE:  signals = 11'b0_1_0_0_100_0_1_0_0;
+            JL_EXE: signals = 11'b0_1_0_0_100_0_1_1_0;
+            S_EXE:  signals = 11'b0_0_1_0_000_0_0_0_0;
+            S_MEM:  signals = 11'b0_0_1_1_000_0_0_0_1;
+            L_EXE:  signals = 11'b0_0_1_0_001_0_0_0_0;
+            L_MEM:  signals = 11'b0_0_1_0_001_0_0_0_1;
+            L_WB:   signals = 11'b0_1_1_0_001_0_0_0_0;
         endcase
     end
 

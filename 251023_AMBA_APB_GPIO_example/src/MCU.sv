@@ -2,8 +2,21 @@
 
 module MCU (
     input logic clk,
-    input logic reset
+    input logic reset,
+
+    // External Port
+    output logic [3:0] gpo
 );
+    wire PCLK = clk;
+    wire PRESET = reset;
+
+    // Internal Interface Signals
+    logic transfer;
+    logic ready;
+    logic write;
+    logic [31:0] addr;
+    logic [31:0] wdata;
+    logic [31:0] rdata;
 
     logic [31:0] instrCode, instrMemAddr;
     logic [ 2:0] strb;
@@ -11,6 +24,45 @@ module MCU (
     logic [31:0] busAddr;
     logic [31:0] busWData;
     logic [31:0] busRData;
+
+    // APB Interface Signals
+    logic [31:0] PADDR;
+    logic PWRITE;
+    logic PENABLE;
+    logic [31:0] PWDATA;
+    logic PSEL0;
+    logic PSEL1;
+    logic PSEL2;
+    logic PSEL3;
+    logic [31:0] PRDATA0;
+    logic [31:0] PRDATA1;
+    logic [31:0] PRDATA2;
+    logic [31:0] PRDATA3;
+    logic PREADY0;
+    logic PREADY1;
+    logic PREADY2;
+    logic PREADY3;
+
+    // Slave Select Signals
+    logic PSEL_RAM;
+    logic PSEL_GPO;
+    // logic PSEL_GPI;
+    // logic PSEL_GPIOA;
+
+    // Slave Read Data Signals
+    logic [31:0] PRDATA_RAM;
+    logic [31:0] PRDATA_GPO;
+
+    // Slave Ready Signals
+    logic PREADY_RAM;
+    logic PREADY_GPO;
+
+
+    assign write = busWe;
+    assign addr  = busAddr;
+    assign wdata = busWData;
+    assign busRData = rdata;
+
 
     ROM U_ROM (
         .addr(instrMemAddr),
@@ -26,15 +78,46 @@ module MCU (
         .busWe       (busWe),
         .busAddr     (busAddr),
         .busWData    (busWData),
-        .busRData    (busRData)
+        .busRData    (busRData),
+        .transfer     (transfer),
+        .ready        (ready)
+    );
+
+    // APB_Master U_APB_MASTER (
+    APB_Manager U_APB_MANAGER (
+        .*,
+        .PSEL0 (PSEL_RAM),
+        .PSEL1 (PSEL_GPO),
+        .PSEL2 (),
+        .PSEL3 (),
+        .PRDATA0 (PRDATA_RAM),
+        .PRDATA1 (PRDATA_GPO),
+        .PRDATA2 (),
+        .PRDATA3 (),
+        .PREADY0 (PREADY_RAM),
+        .PREADY1 (PREADY_GPO),
+        .PREADY2 (),
+        .PREADY3 ()
     );
 
     RAM U_RAM (
-        .clk  (clk),
-        .strb (strb),
-        .we   (busWe),
-        .addr (busAddr),
-        .wData(busWData),
-        .rData(busRData)
+        .*,
+        .PSEL (PSEL_RAM),
+        .PRDATA (PRDATA_RAM),
+        .PREADY (PREADY_RAM)
     );
+
+    APB_GPO U_GPO (
+        .*,
+        .PSEL (PSEL_GPO),
+        .PRDATA (PRDATA_GPO),
+        .PREADY (PREADY_GPO)
+    );
+
+    // GPO_Periph U_GPO_PERIPH (
+    //     .*,
+    //     .PSEL (PSEL_GPO),
+    //     .PRDATA (PRDATA_GPO),
+    //     .PREADY (PREADY_GPO),
+    // );
 endmodule
