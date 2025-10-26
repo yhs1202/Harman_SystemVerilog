@@ -7,7 +7,8 @@ module ROM (
     logic [31:0] rom[0:2**15-1];
   
     initial begin
-        $readmemh("code.mem", rom);
+        // $readmemh("test_APB_GPI.mem", rom);
+        $readmemh("test_LED_Shift.mem", rom);
    /* 
     //rom[x]=32'b fucn7 _ rs2 _ rs1 _f3 _ rd  _ op // R-Type
     rom[0] = 32'b0000000_00001_00010_000_00100_0110011;// add x4, x2, x1

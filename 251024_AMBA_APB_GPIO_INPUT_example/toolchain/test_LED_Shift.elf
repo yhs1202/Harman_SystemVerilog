@@ -1,0 +1,175 @@
+file.elf:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 :
+   0:	10001137          	lui	sp,0x10001
+
+0000000000000004 
+:
+   4:	fe010113          	addi	sp,sp,-32 # 10000fe0 <_sstack+0xfff05e0>
+   8:	00112e23          	sw	ra,28(sp)
+   c:	00812c23          	sw	s0,24(sp)
+  10:	02010413          	addi	s0,sp,32
+  14:	00100793          	li	a5,1
+  18:	fef42423          	sw	a5,-24(s0)
+  1c:	fe042623          	sw	zero,-20(s0)
+  20:	094000ef          	jal	ra,b4 
+  24:	100037b7          	lui	a5,0x10003
+  28:	00878793          	addi	a5,a5,8 # 10003008 <_sstack+0xfff2608>
+  2c:	0007a783          	lw	a5,0(a5)
+  30:	0807f793          	andi	a5,a5,128
+  34:	00079663          	bnez	a5,40 
+  38:	fe042623          	sw	zero,-20(s0)
+  3c:	00c0006f          	j	48 
+  40:	00100793          	li	a5,1
+  44:	fef42623          	sw	a5,-20(s0)
+  48:	fe842783          	lw	a5,-24(s0)
+  4c:	00078513          	mv	a0,a5
+  50:	128000ef          	jal	ra,178 
+  54:	0c800513          	li	a0,200
+  58:	0a4000ef          	jal	ra,fc 
+  5c:	fec42783          	lw	a5,-20(s0)
+  60:	00078a63          	beqz	a5,74 
+  64:	fec42703          	lw	a4,-20(s0)
+  68:	00100793          	li	a5,1
+  6c:	00f70c63          	beq	a4,a5,84 
+  70:	0240006f          	j	94 
+  74:	fe840793          	addi	a5,s0,-24
+  78:	00078513          	mv	a0,a5
+  7c:	134000ef          	jal	ra,1b0 
+  80:	0140006f          	j	94 
+  84:	fe840793          	addi	a5,s0,-24
+  88:	00078513          	mv	a0,a5
+  8c:	170000ef          	jal	ra,1fc 
+  90:	00000013          	nop
+  94:	100037b7          	lui	a5,0x10003
+  98:	00878793          	addi	a5,a5,8 # 10003008 <_sstack+0xfff2608>
+  9c:	0007a703          	lw	a4,0(a5)
+  a0:	100037b7          	lui	a5,0x10003
+  a4:	00478793          	addi	a5,a5,4 # 10003004 <_sstack+0xfff2604>
+  a8:	00475713          	srli	a4,a4,0x4
+  ac:	00e7a023          	sw	a4,0(a5)
+  b0:	f75ff06f          	j	24 
+
+00000000000000b4 :
+  b4:	ff010113          	addi	sp,sp,-16
+  b8:	00112623          	sw	ra,12(sp)
+  bc:	00812423          	sw	s0,8(sp)
+  c0:	01010413          	addi	s0,sp,16
+  c4:	100017b7          	lui	a5,0x10001
+  c8:	0ff00713          	li	a4,255
+  cc:	00e7a023          	sw	a4,0(a5) # 10001000 <_sstack+0xfff0600>
+  d0:	100027b7          	lui	a5,0x10002
+  d4:	0ff00713          	li	a4,255
+  d8:	00e7a023          	sw	a4,0(a5) # 10002000 <_sstack+0xfff1600>
+  dc:	100037b7          	lui	a5,0x10003
+  e0:	00f00713          	li	a4,15
+  e4:	00e7a023          	sw	a4,0(a5) # 10003000 <_sstack+0xfff2600>
+  e8:	00000013          	nop
+  ec:	00c12083          	lw	ra,12(sp)
+  f0:	00812403          	lw	s0,8(sp)
+  f4:	01010113          	addi	sp,sp,16
+  f8:	00008067          	ret
+
+00000000000000fc :
+  fc:	fd010113          	addi	sp,sp,-48
+ 100:	02112623          	sw	ra,44(sp)
+ 104:	02812423          	sw	s0,40(sp)
+ 108:	03010413          	addi	s0,sp,48
+ 10c:	fca42e23          	sw	a0,-36(s0)
+ 110:	fe042623          	sw	zero,-20(s0)
+ 114:	fe042423          	sw	zero,-24(s0)
+ 118:	03c0006f          	j	154 
+ 11c:	fe042223          	sw	zero,-28(s0)
+ 120:	01c0006f          	j	13c 
+ 124:	fec42783          	lw	a5,-20(s0)
+ 128:	00178793          	addi	a5,a5,1
+ 12c:	fef42623          	sw	a5,-20(s0)
+ 130:	fe442783          	lw	a5,-28(s0)
+ 134:	00178793          	addi	a5,a5,1
+ 138:	fef42223          	sw	a5,-28(s0)
+ 13c:	fe442703          	lw	a4,-28(s0)
+ 140:	3e700793          	li	a5,999
+ 144:	fee7d0e3          	ble	a4,a5,124 
+ 148:	fe842783          	lw	a5,-24(s0)
+ 14c:	00178793          	addi	a5,a5,1
+ 150:	fef42423          	sw	a5,-24(s0)
+ 154:	fe842783          	lw	a5,-24(s0)
+ 158:	fdc42703          	lw	a4,-36(s0)
+ 15c:	fce7e0e3          	bltu	a5,a4,11c 
+ 160:	00000013          	nop
+ 164:	00000013          	nop
+ 168:	02c12083          	lw	ra,44(sp)
+ 16c:	02812403          	lw	s0,40(sp)
+ 170:	03010113          	addi	sp,sp,48
+ 174:	00008067          	ret
+
+0000000000000178 :
+ 178:	fe010113          	addi	sp,sp,-32
+ 17c:	00112e23          	sw	ra,28(sp)
+ 180:	00812c23          	sw	s0,24(sp)
+ 184:	02010413          	addi	s0,sp,32
+ 188:	fea42623          	sw	a0,-20(s0)
+ 18c:	100017b7          	lui	a5,0x10001
+ 190:	00478793          	addi	a5,a5,4 # 10001004 <_sstack+0xfff0604>
+ 194:	fec42703          	lw	a4,-20(s0)
+ 198:	00e7a023          	sw	a4,0(a5)
+ 19c:	00000013          	nop
+ 1a0:	01c12083          	lw	ra,28(sp)
+ 1a4:	01812403          	lw	s0,24(sp)
+ 1a8:	02010113          	addi	sp,sp,32
+ 1ac:	00008067          	ret
+
+00000000000001b0 :
+ 1b0:	fe010113          	addi	sp,sp,-32
+ 1b4:	00112e23          	sw	ra,28(sp)
+ 1b8:	00812c23          	sw	s0,24(sp)
+ 1bc:	02010413          	addi	s0,sp,32
+ 1c0:	fea42623          	sw	a0,-20(s0)
+ 1c4:	fec42783          	lw	a5,-20(s0)
+ 1c8:	0007a783          	lw	a5,0(a5)
+ 1cc:	00179713          	slli	a4,a5,0x1
+ 1d0:	fec42783          	lw	a5,-20(s0)
+ 1d4:	0007a783          	lw	a5,0(a5)
+ 1d8:	0077d793          	srli	a5,a5,0x7
+ 1dc:	00f76733          	or	a4,a4,a5
+ 1e0:	fec42783          	lw	a5,-20(s0)
+ 1e4:	00e7a023          	sw	a4,0(a5)
+ 1e8:	00000013          	nop
+ 1ec:	01c12083          	lw	ra,28(sp)
+ 1f0:	01812403          	lw	s0,24(sp)
+ 1f4:	02010113          	addi	sp,sp,32
+ 1f8:	00008067          	ret
+
+00000000000001fc :
+ 1fc:	fe010113          	addi	sp,sp,-32
+ 200:	00112e23          	sw	ra,28(sp)
+ 204:	00812c23          	sw	s0,24(sp)
+ 208:	02010413          	addi	s0,sp,32
+ 20c:	fea42623          	sw	a0,-20(s0)
+ 210:	fec42783          	lw	a5,-20(s0)
+ 214:	0007a783          	lw	a5,0(a5)
+ 218:	0017d713          	srli	a4,a5,0x1
+ 21c:	fec42783          	lw	a5,-20(s0)
+ 220:	0007a783          	lw	a5,0(a5)
+ 224:	00779793          	slli	a5,a5,0x7
+ 228:	00f76733          	or	a4,a4,a5
+ 22c:	fec42783          	lw	a5,-20(s0)
+ 230:	00e7a023          	sw	a4,0(a5)
+ 234:	00000013          	nop
+ 238:	01c12083          	lw	ra,28(sp)
+ 23c:	01812403          	lw	s0,24(sp)
+ 240:	02010113          	addi	sp,sp,32
+ 244:	00008067          	ret
+
+Disassembly of section .heap:
+
+0000000000010000 <_sheap>:
+	...
+
+Disassembly of section .stack:
+
+0000000000010200 <_estack>:
+	...

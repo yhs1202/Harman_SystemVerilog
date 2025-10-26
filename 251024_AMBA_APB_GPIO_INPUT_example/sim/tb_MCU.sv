@@ -4,7 +4,9 @@ module tb_MCU ();
 
     logic       clk;
     logic       reset;
-    logic [3:0] gpo;
+    logic [7:0] gpo;
+    logic [7:0] gpi;
+    logic [7:0] gpio;
 
     MCU dut (.*);
 

@@ -1,0 +1,47 @@
+file.elf:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 :
+   0:	10001137          	lui	sp,0x10001
+
+0000000000000004 
+:
+   4:	ff010113          	addi	sp,sp,-16 # 10000ff0 <_sstack+0xfff05f0>
+   8:	00112623          	sw	ra,12(sp)
+   c:	00812423          	sw	s0,8(sp)
+  10:	01010413          	addi	s0,sp,16
+  14:	100017b7          	lui	a5,0x10001
+  18:	0ff00713          	li	a4,255
+  1c:	00e7a023          	sw	a4,0(a5) # 10001000 <_sstack+0xfff0600>
+  20:	100027b7          	lui	a5,0x10002
+  24:	0ff00713          	li	a4,255
+  28:	00e7a023          	sw	a4,0(a5) # 10002000 <_sstack+0xfff1600>
+  2c:	100037b7          	lui	a5,0x10003
+  30:	00f00713          	li	a4,15
+  34:	00e7a023          	sw	a4,0(a5) # 10003000 <_sstack+0xfff2600>
+  38:	100027b7          	lui	a5,0x10002
+  3c:	00478713          	addi	a4,a5,4 # 10002004 <_sstack+0xfff1604>
+  40:	100017b7          	lui	a5,0x10001
+  44:	00478793          	addi	a5,a5,4 # 10001004 <_sstack+0xfff0604>
+  48:	00072703          	lw	a4,0(a4)
+  4c:	00e7a023          	sw	a4,0(a5)
+  50:	100037b7          	lui	a5,0x10003
+  54:	00878793          	addi	a5,a5,8 # 10003008 <_sstack+0xfff2608>
+  58:	0007a703          	lw	a4,0(a5)
+  5c:	100037b7          	lui	a5,0x10003
+  60:	00478793          	addi	a5,a5,4 # 10003004 <_sstack+0xfff2604>
+  64:	00475713          	srli	a4,a4,0x4
+  68:	00e7a023          	sw	a4,0(a5)
+  6c:	fcdff06f          	j	38 
+
+Disassembly of section .heap:
+
+0000000000010000 <_sheap>:
+	...
+
+Disassembly of section .stack:
+
+0000000000010200 <_estack>:
+	...
