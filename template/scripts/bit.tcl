@@ -1,5 +1,6 @@
 # ============================================================
 # Vivado Bitstream Generation Script
+# Author : Hoseung Yoon
 # - proj_name = current directory name
 # - Expects src/ and constr/ subdirectories
 # ============================================================
@@ -18,6 +19,7 @@ if {[info exists ::env(TOP)]} {
 }
 set tb_top "tb_$top"                 ;# Testbench top module name (edit this)
 set part "xc7a35ticsg324-1L"         ;# Device part (example: Basys-3)
+set board "Basys3"                   ;# Device board
 set srcdir   "$proj_dir/src"
 set simdir   "$proj_dir/sim"
 set constrdir "$proj_dir/constr"
@@ -61,6 +63,14 @@ set sv_files [get_all_files $srcdir *.sv]
 if {[llength $sv_files] > 0} {
     add_files -fileset sources_1 $sv_files
 }
+
+# Add memdump files
+set mem_file [get_all_files $memdir *.mem]
+if {[llength $mem_file] > 0} {
+    add_files -fileset sources_1 $mem_file
+}
+set_property file_type {Memory Initialization Files} [get_files $mem_file]
+set_property used_in {synthesis implementation simulation} [get_files $mem_file]
 
 # Set top module
 set_property top $top [current_fileset]

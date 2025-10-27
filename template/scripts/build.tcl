@@ -1,5 +1,6 @@
 # ============================================================
 # Vivado Build Script
+# Author : Hoseung Yoon
 # - proj_name = current directory name
 # - Expects src/ and constr/ subdirectories
 # ============================================================
@@ -62,6 +63,14 @@ if {[llength $sv_files] > 0} {
     add_files -fileset sources_1 $sv_files
 }
 
+# Add memdump files
+set mem_file [get_all_files $memdir *.mem]
+if {[llength $mem_file] > 0} {
+    add_files -fileset sources_1 $mem_file
+}
+set_property file_type {Memory Initialization Files} [get_files $mem_file]
+set_property used_in {synthesis implementation simulation} [get_files $mem_file]
+
 # Set top module
 set_property top $top [current_fileset]
 
@@ -82,4 +91,4 @@ if {[llength $tb_files_sv] > 0} {
 }
 
 # Set simulation top module
-# set_property top $tb_top [get_filesets sim_1]
+set_property top $tb_top [get_filesets sim_1]
