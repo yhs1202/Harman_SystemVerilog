@@ -23,6 +23,7 @@ set board "Basys3"                   ;# Device board
 set srcdir   "$proj_dir/src"
 set simdir   "$proj_dir/sim"
 set constrdir "$proj_dir/constr"
+set memdir   "$proj_dir/toolchain"
 set outdir   "$proj_dir/out"
 file mkdir $outdir
 # -------------------------------------------
@@ -68,9 +69,9 @@ if {[llength $sv_files] > 0} {
 set mem_file [get_all_files $memdir *.mem]
 if {[llength $mem_file] > 0} {
     add_files -fileset sources_1 $mem_file
+    set_property file_type {Memory Initialization Files} [get_files $mem_file]
+    set_property used_in {synthesis implementation simulation} [get_files $mem_file]
 }
-set_property file_type {Memory Initialization Files} [get_files $mem_file]
-set_property used_in {synthesis implementation simulation} [get_files $mem_file]
 
 # Set top module
 set_property top $top [current_fileset]
