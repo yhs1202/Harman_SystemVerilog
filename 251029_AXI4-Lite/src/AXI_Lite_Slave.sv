@@ -32,7 +32,8 @@ module AXI_Lite_Slave (
 
     // Slave Registers
     logic [31:0] slv_reg0, slv_reg1, slv_reg2, slv_reg3;
-    logic [3:0] awaddr_reg, araddr_reg;
+    logic [3:0] awaddr_reg, awaddr_next;
+    logic [3:0] araddr_reg, araddr_next;
 
     /* WRITE Transaction */
     // AW Channel
@@ -46,25 +47,29 @@ module AXI_Lite_Slave (
     always_ff @(posedge ACLK) begin : AW_ff
         if (!ARESETn) begin // Synchronous reset
             aw_state <= AW_IDLE_S;
+            awaddr_reg <= 0;
         end else begin
             aw_state <= aw_state_next;
+            awaddr_reg <= awaddr_next;
         end
     end
 
     always_comb begin : AW_comb
         aw_state_next = aw_state;
+        awaddr_next = awaddr_reg;
         AWREADY = 1'b0;
-        awaddr_reg = AWADDR;
         case (aw_state)
             AW_IDLE_S: begin
                 if (AWVALID) begin
-                    AWREADY = 1'b1;
-                    awaddr_reg = AWADDR;
                     aw_state_next = AW_READY_S;
+                    awaddr_next = AWADDR;
                 end
             end
             AW_READY_S: begin
-                aw_state_next = AW_IDLE_S;
+                AWREADY = 1'b1;
+                if (AWVALID & AWREADY) begin
+                    aw_state_next = AW_IDLE_S;
+                end
             end
         endcase
     end
@@ -91,8 +96,15 @@ module AXI_Lite_Slave (
         WREADY = 1'b0;
         case (w_state)
             W_IDLE_S: begin
+                WREADY = 1'b0;
+                if (AWVALID) begin
+                    w_state_next = W_READY_S;
+                end
+            end
+            W_READY_S: begin
+                WREADY = 1'b1;
                 if (WVALID) begin
-                    WREADY = 1'b1;
+                    w_state_next = W_IDLE_S;
                     // Write to slave registers
                     case (awaddr_reg[3:2])
                         2'd0: slv_reg0 = WDATA;
@@ -100,11 +112,7 @@ module AXI_Lite_Slave (
                         2'd2: slv_reg2 = WDATA;
                         2'd3: slv_reg3 = WDATA;
                     endcase
-                    w_state_next = W_READY_S;
                 end
-            end
-            W_READY_S: begin
-                w_state_next = W_IDLE_S;
             end
         endcase
     end
@@ -132,15 +140,17 @@ module AXI_Lite_Slave (
         BRESP = 2'b00; // OKAY response
         case (b_state)
             B_IDLE_S: begin
+                BVALID = 1'b0;
                 if (WVALID & WREADY) begin
                     b_state_next = B_VALID_S;
                 end
             end
             B_VALID_S: begin
                 BVALID = 1'b1;
-                if (BREADY) begin
+                BRESP = 2'b00; // OKAY response
+                // if (BREADY) begin
                     b_state_next = B_IDLE_S;
-                end
+                // end
             end
         endcase
     end
@@ -169,12 +179,12 @@ module AXI_Lite_Slave (
         case (ar_state)
             AR_IDLE_S: begin
                 if (ARVALID) begin
-                    ARREADY = 1'b1;
-                    araddr_reg = ARADDR;
                     ar_state_next = AR_READY_S;
                 end
             end
             AR_READY_S: begin
+                ARREADY = 1'b1;
+                araddr_reg = ARADDR;
                 ar_state_next = AR_IDLE_S;
             end
         endcase

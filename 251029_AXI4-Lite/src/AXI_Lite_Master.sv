@@ -172,7 +172,8 @@ module AXI_Lite_Master (
 
     always_comb begin : AR_comb
         ar_state_next = ar_state;
-        ARVALID = 1'b0;
+        // ARVALID = 1'b0;
+        ARADDR = addr;
         case (ar_state)
             AR_IDLE_S: begin
                 ARVALID = 1'b0;
@@ -213,7 +214,7 @@ module AXI_Lite_Master (
         case (r_state)
             R_IDLE_S: begin
                 RREADY = 1'b0;
-                if (ARVALID) begin
+                if (ARVALID) begin // ARDONE
                     r_state_next = R_READY_S;
                 end
             end
