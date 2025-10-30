@@ -46,10 +46,6 @@ module tb_AXI_LITE ();
         #00;
         ACLK = 1'b0;
         ARESETn = 1'b0; // Active Low Reset
-        transfer = 1'b0;
-        addr = 32'h0000_0000;
-        wdata = 32'h0000_0000;
-        write = 1'b0;
 
         #20;
         ARESETn = 1'b1;
