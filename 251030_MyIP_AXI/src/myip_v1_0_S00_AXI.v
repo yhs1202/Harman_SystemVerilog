@@ -15,9 +15,25 @@
 	)
 	(
 		// Users to add ports here
+		// GPIO Port
 		output wire [7:0] cr,
 		output wire [7:0] odr,
 		input wire [7:0] idr,
+
+		// UART_FIFO Port
+		output reg tx_we,
+		output reg rx_re,
+
+		input wire rx_full,
+		input wire tx_empty,
+		input wire tx_full,
+		input wire rx_empty,
+
+		input wire [7:0] rx_data,
+		output reg [7:0] tx_data,
+
+		output reg rx,
+		input wire tx,
 
 		// User ports ends
 		// Do not modify the ports beyond this line
@@ -101,8 +117,8 @@
 	// ADDR_LSB is used for addressing 32/64 bit registers/memories
 	// ADDR_LSB = 2 for 32 bits (n downto 2)
 	// ADDR_LSB = 3 for 64 bits (n downto 3)
-	localparam integer ADDR_LSB = (C_S_AXI_DATA_WIDTH/32) + 1;
-	localparam integer OPT_MEM_ADDR_BITS = 1;
+	localparam integer ADDR_LSB = (C_S_AXI_DATA_WIDTH/32) + 1; // 2 for 32 bits
+	localparam integer OPT_MEM_ADDR_BITS = 3;
 	//----------------------------------------------
 	//-- Signals for user logic register space example
 	//------------------------------------------------
@@ -111,6 +127,8 @@
 	reg [C_S_AXI_DATA_WIDTH-1:0]	slv_reg1;
 	reg [C_S_AXI_DATA_WIDTH-1:0]	slv_reg2;
 	reg [C_S_AXI_DATA_WIDTH-1:0]	slv_reg3;
+	reg [C_S_AXI_DATA_WIDTH-1:0]	slv_reg4; // for UART_FIFO
+	reg [C_S_AXI_DATA_WIDTH-1:0]	slv_reg5; // for UART_FIFO
 	wire	 slv_reg_rden;
 	wire	 slv_reg_wren;
 	reg [C_S_AXI_DATA_WIDTH-1:0]	 reg_data_out;
@@ -227,44 +245,67 @@
 	      slv_reg1 <= 0;
 	      slv_reg2 <= 0;
 	      slv_reg3 <= 0;
+		  slv_reg4 <= 0;
+		  slv_reg5 <= 0;
 	    end 
 	  else begin
 	    if (slv_reg_wren)
 	      begin
-	        case ( axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB] )
-	          2'h0:
+	        case ( axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB] ) // 5:2 for opt_mem_addr = 3
+	          3'h0:
 	            for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
 	              if ( S_AXI_WSTRB[byte_index] == 1 ) begin
 	                // Respective byte enables are asserted as per write strobes 
 	                // Slave register 0
 	                slv_reg0[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
 	              end  
-	          2'h1:
+	          3'h1:
 	            for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
 	              if ( S_AXI_WSTRB[byte_index] == 1 ) begin
 	                // Respective byte enables are asserted as per write strobes 
 	                // Slave register 1
 	                slv_reg1[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
 	              end  
-	          2'h2:
+	          3'h2:
 	            for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
 	              if ( S_AXI_WSTRB[byte_index] == 1 ) begin
 	                // Respective byte enables are asserted as per write strobes 
 	                // Slave register 2
 	                slv_reg2[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
 	              end  
-	          2'h3:
+	          3'h3:
 	            for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
 	              if ( S_AXI_WSTRB[byte_index] == 1 ) begin
 	                // Respective byte enables are asserted as per write strobes 
 	                // Slave register 3
 	                slv_reg3[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
-	              end  
+	              end
+
+			  ////////// ADDED FOR UART_FIFO //////////
+			  3'h4: begin
+			    for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
+			      if ( S_AXI_WSTRB[byte_index] == 1 ) begin
+			        // Respective byte enables are asserted as per write strobes
+			        // Slave register 4
+			        slv_reg4[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
+			      end
+			  end
+			  3'h5: begin
+			    for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
+			      if ( S_AXI_WSTRB[byte_index] == 1 ) begin
+			        // Respective byte enables are asserted as per write strobes
+			        // Slave register 5
+			        slv_reg5[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
+			      end
+			  end
+
 	          default : begin
 	                      slv_reg0 <= slv_reg0;
 	                      slv_reg1 <= slv_reg1;
 	                      slv_reg2 <= slv_reg2;
 	                      slv_reg3 <= slv_reg3;
+	                      slv_reg4 <= slv_reg4;
+	                      slv_reg5 <= slv_reg5;
 	                    end
 	        endcase
 	      end
@@ -372,11 +413,13 @@
 	always @(*)
 	begin
 	      // Address decoding for reading registers
-	      case ( axi_araddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB] )
-	        2'h0   : reg_data_out <= slv_reg0;	// cr
-	        2'h1   : reg_data_out <= slv_reg1;	// odr
-	        2'h2   : reg_data_out <= {24'h0, idr[7:0]}; // read only register
-	        2'h3   : reg_data_out <= slv_reg3;
+	      case ( axi_araddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB] )	 // 5:2 for opt_mem_addr = 3
+	        3'h0   : reg_data_out <= slv_reg0;	// cr
+	        3'h1   : reg_data_out <= slv_reg1;	// odr
+	        3'h2   : reg_data_out <= {24'h0, idr[7:0]}; // read only register
+	        3'h3   : reg_data_out <= slv_reg3;
+			3'h4   : reg_data_out <= {24'd0, rx_data}; // RX data
+			3'h5   : reg_data_out <= {28'd0, rx_full, tx_empty, tx_full, rx_empty}; // UART Status
 	        default : reg_data_out <= 0;
 	      endcase
 	end
@@ -401,9 +444,43 @@
 	end    
 
 	// Add user logic here
+	///////////// GPIO /////////////
 	assign cr = slv_reg0[7:0];
 	assign odr = slv_reg1[7:0];
-	// idr -> read only, go to line 374
+	// idr -> read only, go to line 378
+
+
+	/////////// UART_FIFO /////////////
+	// Write: CPU Write TX data to UART TX FIFO
+	always @(posedge S_AXI_ACLK) begin
+		if (!S_AXI_ARESETN) begin
+			tx_we <= 1'b0;
+			tx_data <= 8'h00;
+		end else begin
+			// TX FIFO write enable
+			if (slv_reg_rden && (axi_awaddr[5:2] == 3'h4)) begin
+				tx_we <= 1'b1;
+				// TX data
+				tx_data <= S_AXI_WDATA[7:0];
+			end else begin
+				tx_we <= 1'b0;
+			end
+		end
+	end
+
+	// Read: CPU Read RX data from UART RX FIFO
+	always @(posedge S_AXI_ACLK) begin
+		if (!S_AXI_ARESETN) begin
+			rx_re <= 1'b0;
+		end else begin
+			// RX FIFO read enable
+			if (slv_reg_wren && (axi_awaddr[5:2] == 3'h4)) begin
+				rx_re <= 1'b1;
+			end else begin
+				rx_re <= 1'b0;
+			end
+		end
+	end
 
 	// User logic ends
 

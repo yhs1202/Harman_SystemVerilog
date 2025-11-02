@@ -15,7 +15,14 @@
 	)
 	(
 		// Users to add ports here
+
+		// GPIO Port
 		inout [7:0] gpio,
+
+
+		// UART_FIFO Port
+		input wire rx,
+		output wire tx,
 
 		// User ports ends
 		// Do not modify the ports beyond this line
@@ -44,9 +51,23 @@
 		output wire  s00_axi_rvalid,
 		input wire  s00_axi_rready
 	);
+	
+		// GPIO Internal Signals
 		wire [7:0] cr;
-		wire [7:0] odf;
+		wire [7:0] odr;
 		wire [7:0] idr;
+
+		// UART_FIFO Internal Signals
+		wire tx_we;
+		wire rx_re;
+
+		wire rx_full;
+		wire tx_empty;
+		wire tx_full;
+		wire rx_empty;
+
+		wire [7:0] rx_data;
+		wire [7:0] tx_data;
 
 // Instantiation of Axi Bus Interface S00_AXI
 	myip_v1_0_S00_AXI # ( 
@@ -75,18 +96,53 @@
 		.S_AXI_RVALID(s00_axi_rvalid),
 		.S_AXI_RREADY(s00_axi_rready),
 		// internal signals
+		// GPIO Interface
 		.cr(cr),
-		.odf(odf),
-		.idr(idr)
+		.odr(odr),
+		.idr(idr),
+		// UART_FIFO Interface
+		.tx_we(tx_we),
+		.rx_re(rx_re),
+
+		.rx_full(rx_full),
+		.tx_empty(tx_empty),
+		.tx_full(tx_full),
+		.rx_empty(rx_empty),
+
+		.rx_data(rx_data),
+		.tx_data(tx_data)
 	);
 
 
 	// Add user logic here
 	GPIO U_GPIO (
 		.cr(cr),
-		.odf(odf),
+		.odr(odr),
 		.idr(idr),
 		.gpio(gpio)
+	);
+
+
+	// UART_FIFO
+	UART_FIFO_CORE U_UART_FIFO_CORE (
+		.clk(s00_axi_aclk),
+		.rst(~s00_axi_aresetn),
+		
+		// Status Signals
+		.rx_full(rx_full),
+		.rx_empty(rx_empty),
+		.tx_full(tx_full),
+		.tx_empty(tx_empty),
+
+		// RX Interface
+		.rx(rx),
+		.rx_data(rx_data),
+		.rx_re(rx_re),
+
+		// TX Interface
+		.tx(tx),
+		.tx_data(tx_data),
+		.tx_we(tx_we)
 	);
 
 	// User logic ends
