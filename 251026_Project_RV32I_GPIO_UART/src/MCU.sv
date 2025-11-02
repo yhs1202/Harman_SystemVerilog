@@ -7,8 +7,8 @@ module MCU (
     output logic [7:0] gpo,
     input  logic [7:0] gpi,
     inout  logic [7:0] gpio,
-    input  logic       RX,
-    output logic       TX
+    input  logic       rx,
+    output logic       tx
 );
 
     wire         PCLK = clk;
@@ -115,7 +115,7 @@ module MCU (
     );
 
     UART_Periph U_UART_Periph (
-        .*,
+        .*,   // with RX, TX
         .PSEL  (PSEL_UART),
         .PRDATA(PRDATA_UART),
         .PREADY(PREADY_UART)
