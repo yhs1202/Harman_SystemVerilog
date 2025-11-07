@@ -4,13 +4,17 @@ module counter_top(
     input mode,     // Btn_R, 0: up, 1: down
     input enable,   // Btn_U, 0: stop, 1: run
     input clear,    // Btn_L
-    output [3:0] fnd_com,
-    output [7:0] fnd_data
+
+    // output [3:0] fnd_com,
+    // output [7:0] fnd_data
+    output [$clog2(10000)-1:0] counter
     );
 
     wire w_btn_enable, w_btn_clear, w_btn_mode;
     wire w_enable, w_clear, w_mode;
     wire [$clog2(10000)-1:0] w_count;
+
+    assign counter = w_count;
 
 
     btn_debounce U_BTN_DEBOUNCE_ENABLE (
@@ -56,13 +60,13 @@ module counter_top(
         .count_reg (w_count)
     );
 
-    fnd_controller U_FND_CONTROLLER (
-        .clk (clk),
-        .rst (rst),
-        .count_reg (w_count),
+    // fnd_controller U_FND_CONTROLLER (
+    //     .clk (clk),
+    //     .rst (rst),
+    //     .count_reg (w_count),
 
-        .fnd_com (fnd_com),
-        .fnd_data (fnd_data)
-    );
+    //     .fnd_com (fnd_com),
+    //     .fnd_data (fnd_data)
+    // );
 
 endmodule
