@@ -65,24 +65,3 @@ module spi_slave (
         end
     end
 endmodule
-
-// FND Decoder Module
-module fnd_decoder (
-    input logic [7:0] data_in,  // will be rx_data from SPI_slave
-    input logic rx_done,
-    output logic [$clog2(10000)-1:0] seg_data
-);
-    // Implementation of FND decoder
-endmodule
-
-
-// FND Controller Module
-module fnd_controller (
-    input logic clk,
-    input logic rst,
-    input logic [$clog2(10000)-1:0] seg_data,    // Input data (0 to 9999)
-    output logic [7:0] seg_out,
-    output logic [3:0] digit_select
-);
-    // Implementation of FND controller
-endmodule
