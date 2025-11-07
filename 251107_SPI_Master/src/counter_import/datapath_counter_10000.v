@@ -13,8 +13,8 @@ module datapath_counter_10000(
 
     // tick gen 10hz
     tick_gen #(
-        // .TICK_CYCLE(100_000_000 / 10) // 10Hz
-        .TICK_CYCLE(100_000 / 10) // for simulation
+        .TICK_CYCLE(100_000_000 / 10) // 10Hz
+        // .TICK_CYCLE(100_000 / 10) // for simulation
     ) U_TICK_GEN (
         .clk (clk),
         .rst (rst),
