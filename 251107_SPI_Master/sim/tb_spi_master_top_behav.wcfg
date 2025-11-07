@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="tb_spi_master_top_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="tb_spi_master_top" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="8850000000fs"></ZoomStartTime>
+      <ZoomEndTime time="10239000001fs"></ZoomEndTime>
+      <Cursor1Time time="30000000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="186"></NameColumnWidth>
+      <ValueColumnWidth column_width="93"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="5" />
+   <wvobject fp_name="group154" type="group">
+      <obj_property name="label">top</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/tb_spi_master_top/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/rst" type="logic">
+         <obj_property name="ElementShortName">rst</obj_property>
+         <obj_property name="ObjectShortName">rst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/btn_runstop" type="logic">
+         <obj_property name="ElementShortName">btn_runstop</obj_property>
+         <obj_property name="ObjectShortName">btn_runstop</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/btn_clear" type="logic">
+         <obj_property name="ElementShortName">btn_clear</obj_property>
+         <obj_property name="ObjectShortName">btn_clear</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/SCLK" type="logic">
+         <obj_property name="ElementShortName">SCLK</obj_property>
+         <obj_property name="ObjectShortName">SCLK</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/MOSI" type="logic">
+         <obj_property name="ElementShortName">MOSI</obj_property>
+         <obj_property name="ObjectShortName">MOSI</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/MISO" type="logic">
+         <obj_property name="ElementShortName">MISO</obj_property>
+         <obj_property name="ObjectShortName">MISO</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/SS_n" type="logic">
+         <obj_property name="ElementShortName">SS_n</obj_property>
+         <obj_property name="ObjectShortName">SS_n</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group48" type="group">
+      <obj_property name="label">Counter_controller</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/rst" type="logic">
+         <obj_property name="ElementShortName">rst</obj_property>
+         <obj_property name="ObjectShortName">rst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/btn_runstop" type="logic">
+         <obj_property name="ElementShortName">btn_runstop</obj_property>
+         <obj_property name="ObjectShortName">btn_runstop</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/btn_clear" type="logic">
+         <obj_property name="ElementShortName">btn_clear</obj_property>
+         <obj_property name="ObjectShortName">btn_clear</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/tx_ready" type="logic">
+         <obj_property name="ElementShortName">tx_ready</obj_property>
+         <obj_property name="ObjectShortName">tx_ready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/done" type="logic">
+         <obj_property name="ElementShortName">done</obj_property>
+         <obj_property name="ObjectShortName">done</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/start" type="logic">
+         <obj_property name="ElementShortName">start</obj_property>
+         <obj_property name="ObjectShortName">start</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/tx_data" type="array">
+         <obj_property name="ElementShortName">tx_data[7:0]</obj_property>
+         <obj_property name="ObjectShortName">tx_data[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/SS_n" type="logic">
+         <obj_property name="ElementShortName">SS_n</obj_property>
+         <obj_property name="ObjectShortName">SS_n</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/counter" type="array">
+         <obj_property name="ElementShortName">counter[13:0]</obj_property>
+         <obj_property name="ObjectShortName">counter[13:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/state_reg" type="array">
+         <obj_property name="ElementShortName">state_reg[2:0]</obj_property>
+         <obj_property name="ObjectShortName">state_reg[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/lsb8" type="array">
+         <obj_property name="ElementShortName">lsb8[7:0]</obj_property>
+         <obj_property name="ObjectShortName">lsb8[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/msb8" type="array">
+         <obj_property name="ElementShortName">msb8[7:0]</obj_property>
+         <obj_property name="ObjectShortName">msb8[7:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group69" type="group">
+      <obj_property name="label">spi_master</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/rst" type="logic">
+         <obj_property name="ElementShortName">rst</obj_property>
+         <obj_property name="ObjectShortName">rst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/start" type="logic">
+         <obj_property name="ElementShortName">start</obj_property>
+         <obj_property name="ObjectShortName">start</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/tx_data" type="array">
+         <obj_property name="ElementShortName">tx_data[7:0]</obj_property>
+         <obj_property name="ObjectShortName">tx_data[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/tx_ready" type="logic">
+         <obj_property name="ElementShortName">tx_ready</obj_property>
+         <obj_property name="ObjectShortName">tx_ready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/done" type="logic">
+         <obj_property name="ElementShortName">done</obj_property>
+         <obj_property name="ObjectShortName">done</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/SCLK" type="logic">
+         <obj_property name="ElementShortName">SCLK</obj_property>
+         <obj_property name="ObjectShortName">SCLK</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/MOSI" type="logic">
+         <obj_property name="ElementShortName">MOSI</obj_property>
+         <obj_property name="ObjectShortName">MOSI</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/state_reg" type="array">
+         <obj_property name="ElementShortName">state_reg[1:0]</obj_property>
+         <obj_property name="ObjectShortName">state_reg[1:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/state_next" type="array">
+         <obj_property name="ElementShortName">state_next[1:0]</obj_property>
+         <obj_property name="ObjectShortName">state_next[1:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/tx_data_reg" type="array">
+         <obj_property name="ElementShortName">tx_data_reg[7:0]</obj_property>
+         <obj_property name="ObjectShortName">tx_data_reg[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/sclk_counter_reg" type="array">
+         <obj_property name="ElementShortName">sclk_counter_reg[5:0]</obj_property>
+         <obj_property name="ObjectShortName">sclk_counter_reg[5:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_spi_master/bit_counter_reg" type="array">
+         <obj_property name="ElementShortName">bit_counter_reg[2:0]</obj_property>
+         <obj_property name="ObjectShortName">bit_counter_reg[2:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group114" type="group">
+      <obj_property name="label">tick_gen</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/U_COUNTER_TOP/U_DATAPATH_COUNTER_10000/U_TICK_GEN/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/U_COUNTER_TOP/U_DATAPATH_COUNTER_10000/U_TICK_GEN/rst" type="logic">
+         <obj_property name="ElementShortName">rst</obj_property>
+         <obj_property name="ObjectShortName">rst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/U_COUNTER_TOP/U_DATAPATH_COUNTER_10000/U_TICK_GEN/enable" type="logic">
+         <obj_property name="ElementShortName">enable</obj_property>
+         <obj_property name="ObjectShortName">enable</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/U_COUNTER_TOP/U_DATAPATH_COUNTER_10000/U_TICK_GEN/clear" type="logic">
+         <obj_property name="ElementShortName">clear</obj_property>
+         <obj_property name="ObjectShortName">clear</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/U_COUNTER_TOP/U_DATAPATH_COUNTER_10000/U_TICK_GEN/o_tick" type="logic">
+         <obj_property name="ElementShortName">o_tick</obj_property>
+         <obj_property name="ObjectShortName">o_tick</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/U_COUNTER_TOP/U_DATAPATH_COUNTER_10000/U_TICK_GEN/r_count" type="array">
+         <obj_property name="ElementShortName">r_count[13:0]</obj_property>
+         <obj_property name="ObjectShortName">r_count[13:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group121" type="group">
+      <obj_property name="label">counter_10000</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/U_COUNTER_TOP/U_DATAPATH_COUNTER_10000/U_COUNTER_10000/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/U_COUNTER_TOP/U_DATAPATH_COUNTER_10000/U_COUNTER_10000/rst" type="logic">
+         <obj_property name="ElementShortName">rst</obj_property>
+         <obj_property name="ObjectShortName">rst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/U_COUNTER_TOP/U_DATAPATH_COUNTER_10000/U_COUNTER_10000/i_tick" type="logic">
+         <obj_property name="ElementShortName">i_tick</obj_property>
+         <obj_property name="ObjectShortName">i_tick</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/U_COUNTER_TOP/U_DATAPATH_COUNTER_10000/U_COUNTER_10000/mode" type="logic">
+         <obj_property name="ElementShortName">mode</obj_property>
+         <obj_property name="ObjectShortName">mode</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/U_COUNTER_TOP/U_DATAPATH_COUNTER_10000/U_COUNTER_10000/clear" type="logic">
+         <obj_property name="ElementShortName">clear</obj_property>
+         <obj_property name="ObjectShortName">clear</obj_property>
+      </wvobject>
+      <wvobject fp_name="/tb_spi_master_top/u_spi_master_top/u_upcounter_controller/U_COUNTER_TOP/U_DATAPATH_COUNTER_10000/U_COUNTER_10000/count_reg" type="array">
+         <obj_property name="ElementShortName">count_reg[13:0]</obj_property>
+         <obj_property name="ObjectShortName">count_reg[13:0]</obj_property>
+      </wvobject>
+   </wvobject>
+</wave_config>
