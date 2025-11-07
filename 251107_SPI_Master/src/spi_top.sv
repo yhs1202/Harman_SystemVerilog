@@ -20,7 +20,7 @@ module spi_top (
 
     // output fnd signals
     output logic [3:0] fnd_com,
-    output logic [6:0] fnd_data
+    output logic [7:0] fnd_data
 );
     
     // SPI signals
