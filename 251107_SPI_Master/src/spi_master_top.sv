@@ -23,9 +23,14 @@ module spi_master_top (
     logic tx_ready;
     logic done;
 
+    wire MOSI_drv = SS_n ? 1'bz : MOSI; // Tri-state MOSI when SS_n is high
+
 
     // Instantiate SPI Master
-    spi_master u_spi_master (.*);
+    spi_master u_spi_master (
+        .*,
+        .MOSI (MOSI_drv)
+    );
     // Instantiate upcounter controller
     upcounter_controller u_upcounter_controller (.*);
 endmodule

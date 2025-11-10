@@ -38,7 +38,7 @@ module spi_slave (
     logic [2:0] bit_counter;
 
 
-    // assign MISO = tx_shift_reg[7]; // MSB first
+    // assign MISO = SS_n ? 1'bz : tx_shift_reg[7]; // MSB first
     assign rx_data = rx_shift_reg;
 
     always_ff @( posedge clk, posedge rst ) begin
