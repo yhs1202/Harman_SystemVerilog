@@ -213,12 +213,14 @@ module i2c_master(
                     end else begin    // More data to read -> ACK then next byte
                         bit_counter <= 0;
                         data_next <= 1'b1; // Notify "this byte has been read" (FIFO push, etc. if needed)
+                        byte_cnt  <= byte_cnt + 1;  // count read bytes
                         state <= READ_DATA;
                     end
                 end
 
                 // SDA goes High while SCL High
                 STOP: begin
+                    byte_cnt <= 0;
                     state <= IDLE;
                 end
             endcase
