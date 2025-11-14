@@ -33,14 +33,14 @@ module i2c_master(
 
     // State enumeration
     typedef enum logic [3:0] {
-        IDLE,       // Waiting for I2C enable
-        START,      // Start condition (SDA low while SCL high)
-        ADDRESS,    // Send 7-bit address + R/W bit
-        READ_ACK,   // after address byte, check ACK from slave
-        WRITE_DATA, // write byte to slave (MSB first)
-        READ_ACK2,  // after data write, check ACK from slave and decide next
-        READ_DATA,  // read byte from slave
-        WRITE_ACK,  // after read data, send ACK/NACK
+        IDLE,           // Waiting for I2C enable
+        START,          // Start condition (SDA low while SCL high)
+        ADDRESS,        // Send 7-bit address + R/W bit
+        READ_ADDR_ACK,  // after address byte, check ACK from slave
+        WRITE_DATA,     // write byte to slave (MSB first)
+        READ_ACK,       // after data write, check ACK from slave and decide next
+        READ_DATA,      // read byte from slave
+        WRITE_ACK,      // after read data, send ACK/NACK
         STOP
     } state_t;
 
@@ -88,7 +88,6 @@ module i2c_master(
         end
     end
 
-
     // SDA Control (negedge i2c_clk: change SDA when SCL is low)
     reg sda_out;
     reg write_enable;
@@ -108,14 +107,14 @@ module i2c_master(
                 write_enable <= 1;
                 sda_out      <= addr_buf[7]; // SLA+R/W MSB-first
             end
-            READ_ACK: begin
+            READ_ADDR_ACK: begin
                 write_enable <= 0;   // Slave READ ACK/NACK
             end
             WRITE_DATA: begin
                 write_enable <= 1;
                 sda_out      <= tx_buf[7]; // Data MSB-first
             end
-            READ_ACK2: begin
+            READ_ACK: begin
                 write_enable <= 0;   // Slave READ ACK/NACK
             end
             READ_DATA: begin
@@ -162,15 +161,23 @@ module i2c_master(
                         bit_counter <= bit_counter + 1;
                         addr_buf <= {addr_buf[6:0], 1'b0};  // shift left
                     end
-                    else state <= READ_ACK;
+                    else begin
+                        state <= READ_ADDR_ACK;
+                        bit_counter <= 0;
+                    end
                 end
 
-                READ_ACK: begin
-                    if (i2c_sda == 1'b0) begin  // SLAVE ACK Received
-                        bit_counter <= 0;
-                        state <= (addr_buf[7] == 1'b0) ? WRITE_DATA : READ_DATA; // WRITE or READ
+                READ_ADDR_ACK: begin
+                    if (bit_counter != 0) begin
+                        if (i2c_sda == 1'b0) begin  // SLAVE ACK Received
+                            state <= (addr_buf[7] == 1'b0) ? WRITE_DATA : READ_DATA; // WRITE or READ
+                            bit_counter <= 0;
+                            addr_buf <= 0;
+                        end else begin
+                            state <= STOP; // NACK -> STOP
+                        end
                     end else begin
-                        state <= STOP; // NACK -> STOP
+                        bit_counter <= bit_counter + 1;
                     end
                 end
 
@@ -179,24 +186,31 @@ module i2c_master(
                         bit_counter <= bit_counter + 1;
                         tx_buf <= {tx_buf[6:0], 1'b0};  // shift left
                     end
-                    else state <= READ_ACK2;
+                    else begin 
+                        state <= READ_ACK;
+                        bit_counter <= 0;
+                    end
                 end
 
                 // Check ACK after write data
                 // Decide next action based on data_valid
-                READ_ACK2: begin
-                    if (i2c_sda == 1'b0) begin  // SLAVE ACK
-                        if (data_valid) begin // Next byte available
-                            byte_cnt  <= byte_cnt + 1;  // count written bytes
-                            tx_buf <= tx_data;          // load next data
-                            data_next <= 1'b1;          // request next byte (pulse)
-                            bit_counter <= 0;
-                            state <= WRITE_DATA;
-                        end else begin // No more data -> STOP
+                READ_ACK: begin
+                    if (bit_counter != 0) begin // wait 1 i2c_clk
+                        if (i2c_sda == 1'b0) begin  // SLAVE ACK
+                            if (data_valid) begin // Next byte available
+                                byte_cnt  <= byte_cnt + 1;  // count written bytes
+                                tx_buf <= tx_data;          // load next data
+                                data_next <= 1'b1;          // request next byte (pulse)
+                                bit_counter <= 0;
+                                state <= WRITE_DATA;
+                            end else begin // No more data -> STOP
+                                state <= STOP;
+                            end
+                        end else begin  // NACK -> STOP
                             state <= STOP;
                         end
-                    end else begin  // NACK -> STOP
-                        state <= STOP;
+                    end else begin
+                        bit_counter <= bit_counter + 1; 
                     end
                 end
 
@@ -208,13 +222,17 @@ module i2c_master(
 
                 // Send ACK/NACK after read data
                 WRITE_ACK: begin
-                    if (read_last) begin    // last byte -> NACK then STOP
-                        state <= STOP;
-                    end else begin    // More data to read -> ACK then next byte
-                        bit_counter <= 0;
-                        data_next <= 1'b1; // Notify "this byte has been read" (FIFO push, etc. if needed)
-                        byte_cnt  <= byte_cnt + 1;  // count read bytes
-                        state <= READ_DATA;
+                    if (bit_counter != 0) begin
+                        if (read_last) begin    // last byte -> NACK then STOP
+                            state <= STOP;
+                        end else begin    // More data to read -> ACK then next byte
+                            bit_counter <= 0;
+                            data_next <= 1'b1; // Notify "this byte has been read" (FIFO push, etc. if needed)
+                            byte_cnt  <= byte_cnt + 1;  // count read bytes
+                            state <= READ_DATA;
+                        end
+                    end else begin
+                        bit_counter <= bit_counter + 1;
                     end
                 end
 
