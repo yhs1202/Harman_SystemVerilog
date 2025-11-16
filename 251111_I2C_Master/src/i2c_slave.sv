@@ -1,207 +1,142 @@
-`timescale 1ns/1ps
+// I2C Slave Module
+// Author: Hoseung Yoon
+// Description: I2C Slave module that responds to master read/write requests.
+//              Supports basic ACK/NACK and multi-byte transfers.
+                
+`timescale 1ns / 1ps
 
 module i2c_slave #(
-    parameter SLAVE_ADDR = 7'b101_0000, // example: 0x50
-    parameter MEM_SIZE   = 16           // Memory size in bytes
+    parameter SLAVE_ADDR = 7'b101_0000 // example: 0x50
 ) (
     // Global Signals
     input logic clk,
     input logic rst,
 
-    // external memory to AXI Bridge
-    output logic start_detect,      // Start condition detected
-    output logic stop_detect,       // Stop condition detected
-    output logic rw_mode,           // 1 = Read, 0 = Write
-    output logic [7:0] rx_data,     // Received data byte (Master -> "Slave")
-    output logic rx_valid,
-    input logic [7:0] tx_data,      // Transmit data byte ("Slave" -> Master), Stored in memory
-    input logic tx_valid,
+	input logic [7:0] data_out,		// Data to send to master
+	output logic [7:0] data_in,		// Data received from master
+	input logic send_valid,			// Indicates data_tobe_master is valid
 
     // I2C Signals
-    inout tri sda,
-    inout tri scl
+	inout tri sda,
+	inout tri scl
 );
 
-    // Implementation of I2C Slave functionality would go here.
-    // This is a placeholder for the actual slave logic.
-
-    logic sda_in, scl_in;
-    assign sda_in = sda;
-    assign scl_in = scl;
-
-    logic sda_out_en;   // 1: to drive SDA low
-    assign sda = sda_out_en ? 1'b0 : 1'bz;
-
-    // scl, sda synchronizers for edge detection
-    logic [1:0] scl_sync; // {scl_q, scl_d}
-    logic [1:0] sda_sync; // {sda_q, sda_d}
-
-    always_ff @(posedge clk, posedge rst) begin : synchronizers
-        if (rst) begin
-            // Reset synchronizers, initialize to high (idle state)
-            scl_sync <= 2'b11;
-            sda_sync <= 2'b11;
-        end else begin
-            scl_sync <= {scl_sync[0], scl_in};
-            sda_sync <= {sda_sync[0], sda_in};
-        end
-    end
-
-    // Edge detectors
-    wire scl_rise = (scl_sync[1:0] == 2'b01);     // 0->1
-    wire scl_fall = (scl_sync[1:0] == 2'b10);     // 1->0
-    
-
-    // Start/Stop condition detection
-    assign start_detect = (state == IDLE) ? (sda_sync[1:0] == 2'b10) && scl_sync[1] : 0;        // SDA: 1->0 while SCL=1
-    assign stop_detect  = (state == WRITE_ACK) ? (sda_sync[1:0] == 2'b01) && scl_sync[1] : 0;   // SDA: 0->1 while SCL=1
-
-
+	logic [7:0] data_tobe_master;
+	assign data_tobe_master = data_out;
     // State enumeration
     typedef enum logic [2:0] {
-        IDLE,
-        ADDRESS,
-        ADDR_ACK,
-        WRITE_DATA,
-        WRITE_ACK,
+        READ_ADDR,
+        SEND_ACK,
         READ_DATA,
-        READ_ACK
+        WRITE_DATA,
+        SEND_ACK2
     } state_t;
+	
+	state_t state = READ_ADDR;
 
-    state_t state;
+    // Internal signals
+	reg [7:0] addr;
+	reg [2:0] bit_count;
+	reg sda_out = 0;
+	reg start = 0;
+	reg sda_out_en = 0;
+	
+	assign sda = sda_out_en ? sda_out : 1'bz;
 
 
-    logic [7:0] shift_reg;
-    logic [3:0] bit_count;  // up to 9 bits (DATA + ACK)
-    
-    // FSM
-    always_ff @(posedge clk or posedge rst) begin
-        if (rst) begin
-            state <= IDLE;
-            sda_out_en <= 0;
-            rw_mode <= 0;
-            rx_data <= 0;
-            rx_valid <= 0;
-            shift_reg <= 0;
-            bit_count <= 0;
+    // Slave Start: negedge SDA while SCL is high
+	always_ff @(negedge sda) begin : SLAVE_START
+		if ((start == 0) && (scl == 1)) begin
+			start <= 1;	
+			bit_count <= 7;
+		end
+	end
+	
+    // Slave Stop: posedge SDA while SCL is high
+	always_ff @(posedge sda) begin : SLAVE_STOP
+		if ((start == 1) && (scl == 1)) begin
+			state <= READ_ADDR;
+			start <= 0;
+			sda_out_en <= 0;
+		end
+	end
 
-        end else begin
-            rx_valid <= 0;
-            case (state)
-                IDLE: begin // Wait for START
-                    sda_out_en <= 0;
-                    if (start_detect) state <= ADDRESS;
-                end
 
-                ADDRESS: begin // Sample address + R/W on SCL rising edge
-                    if (scl_rise) begin
-                        shift_reg <= {shift_reg[6:0], sda_in};
-                        bit_count <= bit_count + 1;
-                        if (bit_count == 7) begin
-                            rw_mode <= sda_in;     // R/W, Same with bit0
-                            bit_count <= 0;
-                            if (shift_reg[6:0] == SLAVE_ADDR)     // Slave addr match
-                                state <= ADDR_ACK;
-                            else
-                                state <= IDLE; // ignore
-                        end
-                    end
-                end
+    // Master drives SDA on posedge SCL
+    // Slave should drive SDA on negedge SCL (I2C standard)
+	always_ff @(negedge scl) begin : SLAVE_SDA_DRIVE
+		case(state)
+			READ_ADDR: sda_out_en <= 0;			
+			
+			SEND_ACK: begin
+				sda_out_en <= 1;	
+				sda_out <= 0;   // Send ACK to master
+			end
+			
+			READ_DATA: sda_out_en <= 0;
+			
+			WRITE_DATA: begin
+			    sda_out_en <= 1;  // Drive data to master
+				// sda_out <= data_tobe_master[bit_count];
+				sda_out <= (send_valid) ? data_tobe_master[bit_count] : 1'bx;
+			end
+			
+			SEND_ACK2: begin
+				sda_out_en <= 1;
+				sda_out <= 0;
+			end
+		endcase
+	end
 
-                ADDR_ACK: begin // ACK for address to master (SDA low on SCL fall)
-                    if (scl_fall) begin
-                        sda_out_en <= 1; // ACK
-                        if (bit_count != 0) begin // 1 i2c_clk delay for ACK
-                            // if (scl_rise) begin // Release SDA after ACK
-                            bit_count <= 0;
-                            if (rw_mode) begin // READ
-                                state <= READ_DATA;
-                                shift_reg <= (tx_valid) ? tx_data : 8'hff; // Load data to send if READ
-                            end else begin
-                                sda_out_en <= 0; // release SDA
-                                state <= WRITE_DATA;
-                            end
-                            // end
-                        end else begin
-                        // if (scl_rise) 
-                            bit_count <= bit_count + 1;
-                        end
-                    end
-                end
-
-                WRITE_DATA: begin // Sample received data on SCL rising edge
-                    if (scl_rise) begin
-                        shift_reg <= {shift_reg[6:0], sda_in};
-                        bit_count <= bit_count + 1;
-
-                        if (bit_count == 8) begin
-                            rx_data <= {shift_reg[6:0], sda_in};
-                            rx_valid <= 1;  // Indicate data received
-                            bit_count <= 0;
-                            state <= WRITE_ACK;
-                        end
-                    end
-                end
-
-                WRITE_ACK: begin // ACK for received data to master (SDA low on SCL fall)
-                    if (scl_fall) begin
-                        sda_out_en <= 1; // ACK
-                        if (bit_count != 0) begin
-                            sda_out_en <= 0;
-                            // state <= IDLE;
-                            bit_count <= 0;
-                            if (stop_detect) // Stop condition detected
-                                state <= IDLE;
-                            else begin
-                                rx_valid <= 0;
-                                state <= WRITE_DATA;    // Ready for next byte
-                            end
-                        end 
-                    end else begin
-                            bit_count <= bit_count + 1;
-                    end
-                end
-
-                READ_DATA: begin // Drive data bits to master on SCL falling edge
-                    // shift_reg <= tx_data; // Load data to send
-                    if (scl_fall) begin
-                        // sda_out_en <= 1; // Drive data bit
-                        // if (bit_count == 0) begin 
-                        //     if (tx_valid) shift_reg <= tx_data;   // Load new data byte at start
-                        //     else shift_reg <= 8'hff; // If no data, send 0x00
-                        // end
-                        if (bit_count != 7) begin
-                            sda_out_en <= !shift_reg[7];  // Drive MSB first
-                            shift_reg <= {shift_reg[6:0], 1'b0}; // Shift left, fill with 0
-                            bit_count <= bit_count + 1;
-                        end else begin
-                            bit_count <= 0;
-                            state <= READ_ACK;
-                        end
-                    end
-                end
-
-                READ_ACK: begin // Sample ACK/NACK from master on SCL rising edge
-                    sda_out_en <= 0; // Release SDA after sending data
-
-                    if (scl_rise) begin
-                        if (bit_count != 0) begin
-                            if (!tx_valid) begin
-                                state <= IDLE; // No more data to send
-                            end else begin
-                                if (sda_in == 1) begin 
-                                    state <= IDLE;      // NACK received -> stop reading
-                                end else begin
-                                    state <= READ_DATA; // ACK received -> continue reading
-                                end
-                            end
-                        end else begin
-                            bit_count <= bit_count + 1;
-                        end
-                    end
-                end
-            endcase
-        end
-    end
-
+    // MAIN FSM
+    // Prepare data on SCL rising edge -> to drive on next falling edge
+    // Or sample data from master on SCL rising edge
+	always_ff @(posedge scl, posedge rst) begin : SLAVE_SCL_RISE
+		if (rst) begin
+			state <= READ_ADDR;
+			start <= 0;
+			sda_out_en <= 0;
+			bit_count <= 7;
+			data_in <= 0;
+			addr <= 0;
+		end 
+		else begin
+		if (start == 1) begin
+			case(state)
+				READ_ADDR: begin
+					addr[bit_count] <= sda;
+					if(bit_count == 0) state <= SEND_ACK;	// rw_mode
+					else bit_count <= bit_count - 1;	// addr sampling		
+				end
+				
+				SEND_ACK: begin     // ADDR ACK sent, prepare for next state
+					if(addr[7:1] == SLAVE_ADDR) begin   // Slave address match
+						bit_count <= 7;
+						if(addr[0] == 0) begin  // rw_mode check
+							// data_in <= 0;
+							state <= READ_DATA;	// SLAVE READ (MASTER WRITE)
+						end
+						else state <= WRITE_DATA;
+					end
+				end
+				
+				READ_DATA: begin    // Receive data from master (MASTER WRITE)
+					data_in[bit_count] <= sda;
+					if(bit_count == 0) begin
+						state <= SEND_ACK2;
+					end else bit_count <= bit_count - 1;
+				end
+				
+				SEND_ACK2: begin    // ACK for received data
+					state <= READ_ADDR;					
+				end
+				
+				WRITE_DATA: begin   // Send data to master (MASTER READ)
+					if(bit_count == 0) state <= READ_ADDR;
+					else bit_count <= bit_count - 1;		
+				end
+			endcase
+		end
+		end
+	end
 endmodule

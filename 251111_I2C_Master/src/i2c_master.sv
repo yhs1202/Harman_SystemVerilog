@@ -1,35 +1,37 @@
-`timescale 1ns / 1ps
-
 // I2C Controller Module
 // Author: Hoseung Yoon
-// Description: 
-// This module implements an I2C controller that handles address, data input/output, 
-// and multi-byte transactions.
-// System Clock: 100 MHz, I2C Clock: 100 kHz (1/1000, configurable via DIVIDE_BY)
+// Description: This module implements an I2C Master controller that handles address, 
+//              data input/output, and multi-byte transactions.
+
+`timescale 1ns / 1ps
 
 module i2c_master(
     // global signals
-    input  logic clk,
-    input  logic rst,
+	input logic clk,
+	input logic rst,
 
     // I2C transaction signals
-    input  logic [6:0] addr,
-    input  logic [7:0] tx_data,     // input data to write (master -> slave)
-    input  logic i2c_en,            // I2C enable signal
-    input  logic rw,                // 0: write, 1: read
+	input logic [6:0] addr,
+	input logic [7:0] tx_data,    // input data to write (master -> slave)
+	input logic i2c_en,           // I2C enable signal
+	input logic rw,               // 0: write, 1: read
 
-    // for multi-byte transactions
-    input  logic data_valid,        // Indicates that next byte is ready to send (for write)
-    output logic data_next,         // Indicates request pulse for next byte 
-    input  logic read_last,         // If last byte during read, set to 1
-
-    output logic [7:0] rx_data,     // Received output data during read (slave -> master)
-    output logic ready,             // Master idle flag (ready for next transaction)
+    // for external AXI interface
+    output logic is_ack,    // for test
+    output logic is_nack,   // for test
+    output logic [7:0] rx_data,   // Received output data during read (slave -> master)
+    output logic ready,           // Master idle flag (ready for next transaction)
 
     // I2C bus (open-drain)
-    inout  wire  i2c_sda,
-    inout  wire  i2c_scl
-);
+	inout wire sda,
+	inout wire scl
+	);
+
+    // Output assignments
+    assign ready = ((rst == 0) && (state == IDLE)) ? 1 : 0;
+    assign is_ack = (state == READ_ADDR_ACK || state == READ_ACK) && (sda == 1'b0);
+    assign is_nack = (state == READ_ADDR_ACK || state == READ_ACK) && (sda == 1'b1);
+
 
     // State enumeration
     typedef enum logic [3:0] {
@@ -38,26 +40,22 @@ module i2c_master(
         ADDRESS,        // Send 7-bit address + R/W bit
         READ_ADDR_ACK,  // after address byte, check ACK from slave
         WRITE_DATA,     // write byte to slave (MSB first)
-        READ_ACK,       // after data write, check ACK from slave and decide next
-        READ_DATA,      // read byte from slave
         WRITE_ACK,      // after read data, send ACK/NACK
+        READ_DATA,      // read byte from slave
+        READ_ACK,      // after data write, check ACK from slave and decide next
         STOP
     } state_t;
-
-    localparam DIVIDE_BY = 4; // divider for I2C clock
+	
+	localparam DIVIDE_BY = 4;   // divider for I2C clock
 
     
     // Internal registers
-    state_t state;
-
+	state_t state;
+    
     logic [7:0] tx_buf;   // write data buffer
     logic [7:0] addr_buf; // address + R/W buffer
-    logic [3:0] byte_cnt; // for multi-byte count
+    logic [3:0] bit_counter;
 
-
-    logic [2:0] bit_counter;
-
-    assign ready = ((rst == 0) && (state == IDLE)) ? 1 : 0;
 
 
     // I2C clock generation
@@ -70,180 +68,147 @@ module i2c_master(
         i2c_clk_cnt <= 0;
         end else i2c_clk_cnt <= i2c_clk_cnt + 1;
     end
+	
 
-    
-    // SCL enable control
-    // Keep SCL high during IDLE and STOP states
-    reg i2c_scl_enable = 0;
-    assign i2c_scl = (i2c_scl_enable == 0) ? 1'b1 : i2c_clk;
-    
-    always_ff @(posedge i2c_clk or posedge rst) begin
-        if (rst) begin
-        i2c_scl_enable <= 0;
-        end else begin
-            if ((state == IDLE) || (state == STOP))
-                i2c_scl_enable <= 0;
-            else
-                i2c_scl_enable <= 1;
-        end
-    end
+    // SCL Control (synchronized with i2c_clk if scl_enable)
+	reg scl_enable = 0;
+	assign scl = (scl_enable == 0 ) ? 1'b1 : i2c_clk;
+	always @(negedge i2c_clk, posedge rst) begin
+		if(rst == 1) begin
+			scl_enable <= 0;
+		end else begin
+			if ((state == IDLE) || (state == START) || (state == STOP)) begin
+				scl_enable <= 0;
+			end else begin
+				scl_enable <= 1;
+			end
+		end
+	end
+
 
     // SDA Control (negedge i2c_clk: change SDA when SCL is low)
-    reg sda_out;
-    reg write_enable;
-    assign i2c_sda = (write_enable) ? sda_out : 1'bz;
+	reg sda_out;
+	reg sda_out_en;
+	assign sda = sda_out_en ? sda_out : 1'bz;
 
-    always_ff @(negedge i2c_clk or posedge rst) begin
-        if (rst) begin
-            write_enable <= 1;
-            sda_out      <= 1;
-        end else begin
-            case (state)
-            START: begin
-                write_enable <= 1;
-                sda_out      <= 0; // START: SCL:H, SDA:L
-            end
-            ADDRESS: begin
-                write_enable <= 1;
-                sda_out      <= addr_buf[7]; // SLA+R/W MSB-first
-            end
-            READ_ADDR_ACK: begin
-                write_enable <= 0;   // Slave READ ACK/NACK
-            end
-            WRITE_DATA: begin
-                write_enable <= 1;
-                sda_out      <= tx_buf[7]; // Data MSB-first
-            end
-            READ_ACK: begin
-                write_enable <= 0;   // Slave READ ACK/NACK
-            end
-            READ_DATA: begin
-                write_enable <= 0;   // Slave drives data
-            end
-            WRITE_ACK: begin    // Only READ ACK(0)/NACK(1)
-                write_enable <= 1;
-                sda_out      <= (read_last) ? 1'b1 : 1'b0; // Last=NACK(1), continue=ACK(0)
-            end
-            STOP: begin
-                write_enable <= 1;
-                sda_out      <= 1;  // STOP: SCL:H, SDA:H
-            end
-            endcase
-        end
-    end
+	always_ff @(negedge i2c_clk, posedge rst) begin : SDA_CONTROL
+		if(rst) begin
+			sda_out_en <= 1;
+			sda_out <= 1;
+		end else begin
+			case(state)
+				START: begin
+					sda_out_en <= 1;
+					sda_out <= 0;
+				end
+				
+				ADDRESS: begin
+					sda_out <= addr_buf[bit_counter]; // SLA+R/W MSB-first
+				end
+				
+				READ_ADDR_ACK: begin
+					sda_out_en <= 0;    // Slave drives ACK/NACK
+				end
+				
+				WRITE_DATA: begin 
+					sda_out_en <= 1;
+					sda_out <= tx_buf[bit_counter]; // Data MSB-first
+				end
+
+                READ_ACK: begin
+                    sda_out_en <= 0;    // Slave drives ACK/NACK
+                end
+				
+				READ_DATA: begin
+					sda_out_en <= 0;    // Slave drives data
+                    rx_data[bit_counter] <= sda;   // Sample data bit, shift left
+				end
+
+				WRITE_ACK: begin
+					sda_out_en <= 1;    // Only READ ACK(0)/NACK(1)
+					sda_out <= 0;
+				end
+				
+				STOP: begin
+					sda_out_en <= 1;
+					sda_out <= 1;
+				end
+			endcase
+		end
+	end
 
     // Main FSM
-    always_ff @(posedge i2c_clk or posedge rst) begin
-        if (rst) begin
-            state <= IDLE;
-            {rx_data, tx_buf, addr_buf} <= 0;
-            {data_next, bit_counter, byte_cnt} <= 0;
-        end else begin
-            data_next <= 1'b0; // Default clear for pulse signal
-            case (state)
-                IDLE: begin
-                    if (i2c_en) begin
-                        addr_buf <= {addr, rw};
-                        tx_buf <= tx_data;
-                        rx_data <= 0;
-                        bit_counter <= 0;
-                        state <= START;
-                    end
-                end
+	always @(posedge i2c_clk, posedge rst) begin
+		if(rst) begin
+			state <= IDLE;
+            {rx_data, tx_buf, addr_buf, bit_counter} <= 0;
+		end else begin
+			case(state)
+				IDLE: begin
+					if (i2c_en) begin
+						state <= START;
+						addr_buf <= {addr, rw};
+						tx_buf <= tx_data;
+					end
+					else state <= IDLE;
+				end
 
-                START: begin
-                    bit_counter <= 0;
-                    state <= ADDRESS;
-                end
+				START: begin
+					bit_counter <= 7;
+					state <= ADDRESS;
+				end
 
-                ADDRESS: begin
-                    if (bit_counter != 7) begin
-                        bit_counter <= bit_counter + 1;
-                        addr_buf <= {addr_buf[6:0], 1'b0};  // shift left
-                    end
-                    else begin
-                        state <= READ_ADDR_ACK;
-                        bit_counter <= 0;
-                    end
-                end
+				ADDRESS: begin
+					if (bit_counter == 0) begin
+						// bit_counter <= 7;
+						state <= READ_ADDR_ACK;
+					end else bit_counter <= bit_counter - 1;
+				end
 
-                READ_ADDR_ACK: begin
-                    if (bit_counter != 0) begin
-                        if (i2c_sda == 1'b0) begin  // SLAVE ACK Received
-                            state <= (addr_buf[7] == 1'b0) ? WRITE_DATA : READ_DATA; // WRITE or READ
-                            bit_counter <= 0;
-                            addr_buf <= 0;
-                        end else begin
-                            state <= STOP; // NACK -> STOP
-                        end
-                    end else begin
-                        bit_counter <= bit_counter + 1;
-                    end
-                end
-
-                WRITE_DATA: begin
-                    if (bit_counter != 7) begin
-                        bit_counter <= bit_counter + 1;
-                        tx_buf <= {tx_buf[6:0], 1'b0};  // shift left
-                    end
-                    else begin 
-                        state <= READ_ACK;
-                        bit_counter <= 0;
-                    end
-                end
-
-                // Check ACK after write data
-                // Decide next action based on data_valid
-                READ_ACK: begin
-                    if (bit_counter != 0) begin // wait 1 i2c_clk
-                        if (i2c_sda == 1'b0) begin  // SLAVE ACK
-                            if (data_valid) begin // Next byte available
-                                byte_cnt  <= byte_cnt + 1;  // count written bytes
-                                tx_buf <= tx_data;          // load next data
-                                data_next <= 1'b1;          // request next byte (pulse)
-                                bit_counter <= 0;
-                                state <= WRITE_DATA;
-                            end else begin // No more data -> STOP
-                                state <= STOP;
-                            end
-                        end else begin  // NACK -> STOP
-                            state <= STOP;
-                        end
-                    end else begin
-                        bit_counter <= bit_counter + 1; 
-                    end
-                end
-
-                READ_DATA: begin
-                    rx_data <= {rx_data[6:0], i2c_sda};    // Sample data bit
-                    if (bit_counter == 7) state <= WRITE_ACK; // last bit received -> send ACK/NACK
-                    else bit_counter <= bit_counter + 1;
-                end
-
-                // Send ACK/NACK after read data
-                WRITE_ACK: begin
-                    if (bit_counter != 0) begin
-                        if (read_last) begin    // last byte -> NACK then STOP
-                            state <= STOP;
-                        end else begin    // More data to read -> ACK then next byte
-                            bit_counter <= 0;
-                            data_next <= 1'b1; // Notify "this byte has been read" (FIFO push, etc. if needed)
-                            byte_cnt  <= byte_cnt + 1;  // count read bytes
+				READ_ADDR_ACK: begin
+					if (sda == 0) begin // ACK received
+						if(addr_buf[0] == 0) begin
+                            bit_counter <= 7;
+                            state <= WRITE_DATA; // WRITE or READ
+                        end else begin 
+                            bit_counter <= 8; // to omit addr_ack sda
                             state <= READ_DATA;
                         end
-                    end else begin
-                        bit_counter <= bit_counter + 1;
+					end 
+                    else begin
+                        state <= STOP; // NACK -> STOP
+					end
+				end
+
+				WRITE_DATA: begin
+					if(bit_counter == 0) begin
+						state <= READ_ACK;
+					end else bit_counter <= bit_counter - 1;    // Send data bit on following negedge i2c_clk
+				end
+				
+				READ_ACK: begin
+					if ((sda == 0) && (i2c_en == 1)) begin
+                        state <= IDLE; // ACK received and more data to write
                     end
-                end
+					else begin
+                        state <= STOP; // NACK -> STOP
+                    end
+				end
 
-                // SDA goes High while SCL High
-                STOP: begin
-                    byte_cnt <= 0;
-                    state <= IDLE;
-                end
-            endcase
-        end
-    end
+				READ_DATA: begin
+					if (bit_counter == 0) state <= WRITE_ACK;
+					else bit_counter <= bit_counter - 1;        // Sample data bit on following negedge i2c_clk
+				end
+				
+				WRITE_ACK: begin
+					state <= STOP;
+				end
 
+				STOP: begin
+					state <= IDLE;
+				end
+			endcase
+		end
+	end
 
 endmodule

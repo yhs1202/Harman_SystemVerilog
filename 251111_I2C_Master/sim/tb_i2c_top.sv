@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
-
-module tb_i2c_top ();
+module i2c_top_tb;
+    // Global signals
     logic clk;
     logic rst;
 
@@ -9,114 +9,118 @@ module tb_i2c_top ();
     logic [7:0] tx_data;
     logic i2c_en;
     logic rw;
-    logic data_valid;
-    logic data_next;
-    logic read_last;
+
+    // Master-side output signals, to observe
+    logic is_ack;
+    logic is_nack;
     logic [7:0] rx_data;
     logic ready;
-
-
-    // Slave-side signals
-    logic start_detect, stop_detect;
-    logic slave_rw_mode;
-    logic [7:0] slave_rx_data;
-    logic slave_rx_valid;
-
-    logic [7:0] slave_tx_data;
-    logic slave_tx_valid;
 
     // I2C bus (open-drain)
     tri sda;
     tri scl;
 
+    // Pull-up resistors for I2C bus
     pullup(sda);
     pullup(scl);
 
-    i2c_master u_master (
-        .*,
-        .i2c_sda (sda),
-        .i2c_scl (scl)
-    );
+
+    // Slave-side signals
+    logic [7:0] slave_send_data;    // Master read
+    logic [7:0] slave_recv_data;    // Master write
+    logic slave_send_valid;
+    logic slave_recv_valid;
+
+
+    // Instantiation
+    i2c_master u_master (.*);
 
     i2c_slave #(
         .SLAVE_ADDR (7'h50)
     ) u_slave (
         .*,
-        .sda (sda),
-        .scl (scl),
+        .data_in (slave_recv_data),
+        .data_out (slave_send_data),
+        .send_valid (slave_send_valid)
 
-        .start_detect (start_detect),
-        .stop_detect  (stop_detect),
-        .rw_mode      (slave_rw_mode),
-        .rx_data      (slave_rx_data),
-        .rx_valid     (slave_rx_valid),
-
-        .tx_data    (slave_tx_data),
-        .tx_valid   (slave_tx_valid)
     );
 
+    always #5 clk = ~clk;
 
     // Simple 4-Byte Slave Memory (for testbench)
-    logic [7:0] SLV_MEM [0:3];
+    logic [7:0] SLV_MEM [0:9];
 
     initial begin
+        // SLV_MEM[0] = 8'h55;
+        // SLV_MEM[1] = 8'hAA;
         SLV_MEM[0] = 8'h00;
         SLV_MEM[1] = 8'h11;
         SLV_MEM[2] = 8'h22;
         SLV_MEM[3] = 8'h33;
+        SLV_MEM[4] = 8'h44;
+        SLV_MEM[5] = 8'h55;
+        SLV_MEM[6] = 8'h66;
+        SLV_MEM[7] = 8'h77;
+        SLV_MEM[8] = 8'h88;
+        SLV_MEM[9] = 8'h99;
     end
 
-    // Slave logic: consume write data
+    int idx;
+    // Simple AXI interface logic for slave memory access
     always_ff @(posedge clk) begin
-        if (slave_rx_valid) begin
-            SLV_MEM[0] <= slave_rx_data;  // slave write check
+        if(!rw && slave_recv_valid) begin
+            SLV_MEM[idx] <= slave_recv_data;
+        end
+        if (rw) begin // master read operation
+            slave_send_data  <= SLV_MEM[idx];
+            // slave_send_valid <= 1;
+        // end else begin
+            // slave_send_valid <= 0;
         end
     end
 
-    // Slave logic: supply read data
-    always_ff @(posedge clk) begin
-        if (slave_rw_mode == 1) begin // master read operation
-            slave_tx_data  <= SLV_MEM[0];  // slave read check
-            slave_tx_valid <= 1;
-        end else begin
-            slave_tx_valid <= 0;
-        end
-    end
+    
 
-
-    always #5 clk = ~clk;
     initial begin
-        #0; clk = 0; rst = 1;
-        tx_data     = 8'h00;
-        data_valid  = 0;
-        read_last   = 0;
-        rw          = 0;
-        i2c_en      = 0;
-        #10;
+        clk = 0; rst = 1;
+        slave_send_valid = 0; 
+        slave_recv_valid = 0;
+        repeat (5) @(posedge clk);
         rst = 0;
-        addr        = 7'h50;
+        idx = 0;
 
-        wait(ready);
-        @(posedge clk);
+        for (int i = 0; i < 10; i++) begin
+            i2c_en = 1; rw = 0;
+            addr = 7'b1010000;
+            tx_data = i+1;
+            repeat (5) @(posedge clk);
+            i2c_en <= 1'b0;
+            slave_recv_valid = 0;
+            
+            @(posedge ready);
+            idx = i;
+            slave_recv_valid = 1;
+            repeat (5) @(posedge clk);
+        end
+        slave_recv_valid = 0;
+        idx = 0;
+        repeat (100) @(posedge clk);
 
-        // Write data to slave
-        rw = 0; i2c_en = 1; tx_data = 8'h42; data_valid = 1;
-        repeat(12) @(posedge clk);
-        i2c_en = 0;
 
-        wait(ready);    // wait for write completion
+        for (int i = 0; i < 10; i++) begin
+            i2c_en = 1; rw = 1;
+            addr = 7'b1010000;
+            slave_send_valid = 1;
+            repeat (5) @(posedge clk);
+            i2c_en <= 1'b0;
+            @(posedge ready);
+            slave_send_valid = 0;
+            idx = i;
+            @(posedge clk);
+        end
 
-        // Read back the data
-        rw = 1; i2c_en = 1; read_last = 1;
-        repeat(12) @(posedge clk);
-        i2c_en = 0;
-
-        wait(data_next);
-        @(posedge clk);
-        wait(ready);    // wait for rx_data valid
-
-        #100;
-        $finish;
+        repeat (100) @(posedge clk);
+        $stop;
     end
 
 endmodule
