@@ -140,7 +140,7 @@ module i2c_master(
 	always @(posedge i2c_clk, posedge rst) begin
 		if(rst) begin
 			state <= IDLE;
-            {rx_data, tx_buf, addr_buf, bit_counter} <= 0;
+            {tx_buf, addr_buf, bit_counter} <= 0;
 		end else begin
 			case(state)
 				IDLE: begin
