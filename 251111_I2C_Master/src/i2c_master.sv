@@ -27,12 +27,6 @@ module i2c_master(
 	inout wire scl
 	);
 
-    // Output assignments
-    assign ready = ((rst == 0) && (state == IDLE)) ? 1 : 0;
-    assign is_ack = (state == READ_ADDR_ACK || state == READ_ACK) && (sda == 1'b0);
-    assign is_nack = (state == READ_ADDR_ACK || state == READ_ACK) && (sda == 1'b1);
-
-
     // State enumeration
     typedef enum logic [3:0] {
         IDLE,           // Waiting for I2C enable
@@ -48,7 +42,7 @@ module i2c_master(
 	
 	localparam DIVIDE_BY = 4;   // divider for I2C clock
 
-    
+
     // Internal registers
 	state_t state;
     
@@ -57,6 +51,11 @@ module i2c_master(
     logic [3:0] bit_counter;
 
 
+    // Output assignments
+    assign ready = ((rst == 0) && (state == IDLE)) ? 1 : 0;
+    assign is_ack = (state == READ_ADDR_ACK || state == READ_ACK) && (sda == 1'b0);
+    assign is_nack = (state == READ_ADDR_ACK || state == READ_ACK) && (sda == 1'b1);
+    
 
     // I2C clock generation
     reg [7:0] i2c_clk_cnt = 0;
