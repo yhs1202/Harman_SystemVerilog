@@ -1,10 +1,13 @@
 `timescale 1ns/1ps
 module vga_decoder (
-    input logic [9:0] h_counter,
-    input logic [9:0] v_counter,
+    input  logic [9:0] h_counter,
+    input  logic [9:0] v_counter,
     output logic h_sync,
-    output logic v_sync
+    output logic v_sync,
     // Additional VGA signals can be added here
+    output logic DE,
+    output logic [9:0] pixel_x,
+    output logic [9:0] pixel_y
 );
 
     localparam H_visible_area = 640;
@@ -25,5 +28,9 @@ module vga_decoder (
     assign v_sync = (v_counter >= V_visible_area + V_front_porch && 
                      v_counter < V_visible_area + V_front_porch + V_sync_pulse) ? 0 : 1; // Vertical sync pulse
 
+    assign DE = (h_counter < H_visible_area) && (v_counter < V_visible_area);
+
+    assign pixel_x = h_counter;
+    assign pixel_y = v_counter;
 
 endmodule
