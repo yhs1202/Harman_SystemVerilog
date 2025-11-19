@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-module VGA_RGB_Controller (
+module VGA_Test_Pattern (
     input  logic clk,
     input  logic reset,
     input  logic [3:0] r_sw,
@@ -26,15 +26,25 @@ module VGA_RGB_Controller (
         .pixel_y(pixel_y)
     );
 
-
-    VGA_RGB_Switch vga_rgb_switch_inst (
-        .r_sw(r_sw),
-        .g_sw(g_sw),
-        .b_sw(b_sw),
+    test_pattern_gen test_pattern_gen_inst (
+        .clk(clk),
+        .reset(reset),
+        .x(pixel_x),
+        .y(pixel_y),
         .DE(DE),
-        .r_port(r_port),
-        .g_port(g_port),
-        .b_port(b_port)
+        .vga_r(r_port),
+        .vga_g(g_port),
+        .vga_b(b_port)
     );
+
+    // VGA_RGB_Switch vga_rgb_switch_inst (
+    //     .r_sw(r_sw),
+    //     .g_sw(g_sw),
+    //     .b_sw(b_sw),
+    //     .DE(DE),
+    //     .r_port(r_port),
+    //     .g_port(g_port),
+    //     .b_port(b_port)
+    // );
     
 endmodule
