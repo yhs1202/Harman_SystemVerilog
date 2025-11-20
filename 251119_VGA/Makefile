@@ -33,20 +33,20 @@ check:
 	  echo "ERROR: '$(VIVADO)' not found in PATH"; exit 127; }
 
 build: scripts/build.tcl
-	$(VIVADO) -mode gui -source scripts/build.tcl
+	$(VIVADO) -mode gui -source scripts/build.tcl &
 
 sim: $(SOURCES) scripts/sim.tcl
 	@echo "Run simulation (batch mode)" 
-	$(VIVADO) -mode batch -source scripts/sim.tcl
+	$(VIVADO) -mode batch -source scripts/sim.tcl &
 
 sim_gui: $(SOURCES) scripts/sim.tcl
-	$(VIVADO) -mode gui -source scripts/sim.tcl
+	$(VIVADO) -mode gui -source scripts/sim.tcl &
 
 bit: $(BIT) scripts/bit.tcl
 $(BIT): $(SOURCES) $(XDC)
 	@mkdir -p $(OUTDIR)
 	@echo "Run Vivado build (batch mode)"
-	$(VIVADO) -mode batch -source scripts/bit.tcl
+	$(VIVADO) -mode batch -source scripts/bit.tcl &
 	@test -f "$(BIT)" || { echo "ERROR: expected bitstream '$(BIT)' not found"; exit 1; }
 
 clean:

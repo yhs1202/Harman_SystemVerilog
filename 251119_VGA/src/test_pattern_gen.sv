@@ -8,9 +8,7 @@ module test_pattern_gen #(
     input logic [9:0] x,
     input logic [9:0] y,
     input logic DE,
-    output logic [3:0] vga_r,
-    output logic [3:0] vga_g,
-    output logic [3:0] vga_b
+    output logic [11:0] rgb
 );
 
     // Color constants
@@ -38,12 +36,10 @@ module test_pattern_gen #(
     localparam integer BAR_WIDTH_BOTTOM = BAR_WIDTH * 5 / 4; // 113
     localparam integer BAR_WIDTH_BOTTOM2 = BAR_WIDTH / 3;
 
-    logic [11:0] rgb;
-    assign {vga_r, vga_g, vga_b} = rgb;
 
 
     always_comb begin
-        if (!DE) rgb = 12'h000; 
+        if (!DE) rgb = 12'h000;
         else begin
             if (y < (V_ACTIVE * 2 / 3)) begin // y < 320
                 if      (x < BAR_WIDTH * 1) rgb = COL_WHITE;
@@ -75,5 +71,5 @@ module test_pattern_gen #(
             end
         end
     end
-    
 endmodule
+
