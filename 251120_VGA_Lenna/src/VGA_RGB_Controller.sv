@@ -5,7 +5,9 @@ module VGA_RGB_Controller (
     // input logic [3:0] r_sw,
     // input logic [3:0] g_sw,
     // input logic [3:0] b_sw,
-    input logic sel,    // colorbar or lenna mode
+    input logic mode_sel,   // 0: lenna, 1: test pattern
+    input logic scale_sel,  // 0: 640x480, 1: 320x240
+    input logic gray_sel,   // 0: color, 1: grayscale
 
     output logic h_sync,
     output logic v_sync,
@@ -17,15 +19,32 @@ module VGA_RGB_Controller (
   logic DE;
   logic [9:0] pixel_x;
   logic [9:0] pixel_y;
-  logic [11:0] rgb_port;
+  logic [11:0] rgb_normal;
   logic [11:0] rgb_0;
   logic [11:0] rgb_1;
+  logic [11:0] rgb_2;
 
   logic [$clog2(320*240)-1:0] addr;
+  logic [$clog2(320*240)-1:0] addr_vga;
+  logic [$clog2(320*240)-1:0] addr_qvga;
   logic [15:0] imgData;
+  logic [15:0] imgData_vga;
+  logic [15:0] imgData_qvga;
 
-  assign rgb_port = (sel) ? rgb_0 : rgb_1;
-  assign {r_port, g_port, b_port} = rgb_port;
+
+  logic [11:0] rgb_gray;
+
+  assign rgb_normal = ({mode_sel, scale_sel}==2'b00) ? rgb_0 :
+                    ({mode_sel, scale_sel}==2'b01) ? rgb_1 : rgb_2;
+
+  assign {r_port, g_port, b_port} = (gray_sel) ? rgb_gray : rgb_normal;
+
+  assign addr = ({mode_sel, scale_sel}==2'b00) ? addr_qvga :
+                ({mode_sel, scale_sel}==2'b01) ? addr_vga : 0;
+
+  assign imgData_qvga = ({mode_sel, scale_sel} == 2'b00) ? imgData : 0;
+  assign imgData_vga = ({mode_sel, scale_sel} == 2'b01) ? imgData : 0;
+
 
   VGA_Decoder_top vga_decoder_top_inst (
       .clk(clk),
@@ -53,7 +72,7 @@ module VGA_RGB_Controller (
       .x(pixel_x),
       .y(pixel_y),
       .DE(DE),
-      .rgb(rgb_0)
+      .rgb(rgb_2)
   );
 
   imgROM img_rom_inst (
@@ -65,11 +84,27 @@ module VGA_RGB_Controller (
       .DE(DE),
       .x(pixel_x),
       .y(pixel_y),
-      .imgData(imgData),
-      .addr(addr),
+      .imgData(imgData_vga),
+      .addr(addr_vga),
       .r_port(rgb_1[11:8]),
       .g_port(rgb_1[7:4]),
       .b_port(rgb_1[3:0])
   );
 
+  img_upscaler img_mem_reader_upscale_inst (
+      .DE(DE),
+      .x(pixel_x),
+      .y(pixel_y),
+      .imgData(imgData_qvga),
+      .addr(addr_qvga),
+      .r_port(rgb_0[11:8]),
+      .g_port(rgb_0[7:4]),
+      .b_port(rgb_0[3:0])
+  );
+
+  img_grayscaler img_grayscaler_inst (
+      .DE(DE),
+      .rgb_in(rgb_normal),
+      .rgb_out(rgb_gray)
+  );
 endmodule
