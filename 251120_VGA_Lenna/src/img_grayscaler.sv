@@ -18,7 +18,12 @@ module img_grayscaler (
       G8 = {rgb_in[7:4], rgb_in[7:4]};
       B8 = {rgb_in[3:0], rgb_in[3:0]};
 
-      sum = (R8 * 8'd51 + G8 * 8'd179 + B8 * 8'd26);  // Weighted sum
+      // sum = (R8 * 8'd51 + G8 * 8'd179 + B8 * 8'd26);  // Weighted sum
+      // Using bit shifts for multiplication by constants
+      sum = (R8 << 5) + (R8 << 4) + (R8 << 1) + (R8) +            // R8 * (32 + 16 + 2 + 1) = R8 * 51
+            (G8 << 7) + (G8 << 5) + (G8 << 4) + (G8 << 1) + G8 +  // G8 * (128 + 32 + 16 + 2 + 1) = G8 * 179
+            (B8 << 4) + (B8 << 3) + (B8 << 1);                    // B8 * (16 + 8 + 2) = B8 * 26
+
       gray = sum[15:8];  // Take the upper 8 bits as the grayscale value
       rgb_out = {
         gray[7:4], gray[7:4], gray[7:4]
