@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-module VGA_Decoder_top (
+module VGA_Syncher (
     input logic clk,
     input logic reset,
     output logic h_sync,
@@ -14,14 +14,14 @@ module VGA_Decoder_top (
   logic [9:0] v_counter;
 
   // Instantiation
-  pixel_clk_gen pixel_clk_inst (
-      .clk  (clk),
-      .reset(reset),
-      .p_clk(p_clk)
-  );
+//   pixel_clk_gen pixel_clk_inst (
+//       .clk  (clk),
+//       .reset(reset),
+//       .p_clk(p_clk)
+//   );
 
   pixel_counter pixel_counter_inst (
-      .clk(p_clk),
+      .clk(clk),
       .reset(reset),
       .h_counter(h_counter),
       .v_counter(v_counter)
