@@ -1,5 +1,6 @@
 `timescale 1ns / 1ps
 module imgROM (
+    input logic clk,
     input logic [$clog2(320*240-1):0] addr,
     output logic [15:0] data
 );
@@ -13,6 +14,10 @@ module imgROM (
     $readmemh("./Lenna.mem", mem);
   end
 
-  assign data = mem[addr];
+  // assign data = mem[addr];
+  // Synchronous read
+  always_ff @(posedge clk) begin
+    data <= mem[addr];
+  end
 
 endmodule

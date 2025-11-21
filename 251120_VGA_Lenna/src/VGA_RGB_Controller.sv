@@ -30,6 +30,7 @@ module VGA_RGB_Controller (
   logic [15:0] imgData;
   logic [15:0] imgData_vga;
   logic [15:0] imgData_qvga;
+  logic p_clk;
 
 
   logic [11:0] rgb_gray;
@@ -45,9 +46,14 @@ module VGA_RGB_Controller (
   assign imgData_qvga = ({mode_sel, scale_sel} == 2'b00) ? imgData : 0;
   assign imgData_vga = ({mode_sel, scale_sel} == 2'b01) ? imgData : 0;
 
+  pixel_clk_gen pixel_clk_inst (
+      .clk  (clk),
+      .reset(reset),
+      .p_clk(p_clk)
+  );
 
-  VGA_Decoder_top vga_decoder_top_inst (
-      .clk(clk),
+  VGA_Syncher U_VGA_Syncher (
+      .clk(p_clk),
       .reset(reset),
       .h_sync(h_sync),
       .v_sync(v_sync),
@@ -76,6 +82,7 @@ module VGA_RGB_Controller (
   );
 
   imgROM img_rom_inst (
+      .clk(p_clk),
       .addr(addr),
       .data(imgData)
   );
