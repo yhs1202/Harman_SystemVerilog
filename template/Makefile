@@ -1,8 +1,6 @@
 VIVADO ?= vivado
 PROJ := $(notdir $(CURDIR))
-
 OUTDIR := out
-BIT := $(OUTDIR)/$(PROJ).bit
 
 SOURCES := $(shell find src -type f \( -name '*.v' -o -name '*.sv' \) 2>/dev/null)
 XDC := $(wildcard constr/*.xdc)
@@ -21,7 +19,6 @@ help:
 	@echo ""
 	@echo "Variables (override if needed):"
 	@echo "  TOP=<top_module>    (default: $(TOP))"
-	@echo "  PART=<fpga_part>    (default: $(PART))"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make TOP=MyTopModule bit"
@@ -35,13 +32,13 @@ build: scripts/build.tcl
 	@echo "Run Vivado build"
 	$(VIVADO) -mode gui -source scripts/build.tcl &
 
-sim: $(SOURCES) scripts/sim.tcl
+sim: scripts/sim.tcl
 	@echo "Run simulation" 
 	$(VIVADO) -mode gui -source scripts/sim.tcl &
 
-bit: $(BIT) scripts/bit.tcl
+bit: scripts/bit.tcl
 	@echo "Run Vivado bitstream generation"
-	$(VIVADO) -mode gui -source scripts/bit.tcl
+	$(VIVADO) -mode gui -source scripts/bit.tcl &
 
 clean:
 	@rm -rf $(OUTDIR) .Xil .cache .runs .sim .gen *.log *.jou *.str

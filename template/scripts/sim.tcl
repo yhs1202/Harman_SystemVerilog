@@ -1,7 +1,7 @@
 # ============================================================
 # Vivado Simulation Script
 # Author : Hoseung Yoon
-# Last Modified : 2025.12.02
+# Last Modified : 2025.12.04
 # - proj_name = current directory name
 # - Expects src/ and constr/ subdirectories
 # ============================================================
@@ -16,14 +16,14 @@ if {[info exists ::env(TOP)]} {
     set top $::env(TOP)
 } else {
     # Top-level module name (edit this)
-    set top "DiceRace_System"                    ;# Top-level module name (edit this)
+    set top "top"                    ;# Top-level module name (edit this)
 }
 set tb_top "tb_$top"                 ;# Testbench top module name (edit this)
 set board "digilentinc.com:basys3:part0:1.2" ;  # Basys-3 Board part
 set srcdir   "$proj_dir/src"
 set simdir   "$proj_dir/sim"
 set constrdir "$proj_dir/constr"
-set memdir   "$proj_dir/toolchain"
+set memdir   "$proj_dir/src"
 set outdir   "$proj_dir/out"
 file mkdir $outdir
 # -------------------------------------------
